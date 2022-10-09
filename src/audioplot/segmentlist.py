@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Oct  9 15:11:03 2022
-
-@author: keziah
+QScrollArea where :class:`SegmentWidgets` can be added or removed.
 """
 from qtpy.QtWidgets import QGridLayout, QWidget, QPushButton, QScrollArea, QSizePolicy
 from qtpy.QtCore import Signal, Slot, Qt, QSize
@@ -23,6 +21,26 @@ class SegmentList(QScrollArea):
         return getattr(self.widget, name)
 
 class _SegmentList(QWidget):
+    
+    requestNewSegment = Signal()
+    """ **signal** requestNewSegment() 
+    
+        Emitted when 'add' button clicked.
+    """
+    
+    segmentRangeChanged = Signal(int, object, object)
+    """ **signal** segmentRangeChanged(int `index`, float `min`, float `max`) 
+    
+        Emitted when a segment's range changed in spin box.
+    """
+    
+    requestRemoveSegment = Signal(int)
+    """ **signal** requestRemoveSegment(int `index`)
+    
+        Emitted when SegmentWidget removed.
+    """
+    
+    
     def __init__(self, defaultMin=None, defaultMax=None):
         super().__init__()
         
@@ -38,6 +56,7 @@ class _SegmentList(QWidget):
         self.layout.addWidget(self.addButton, 0, 0, 1, 2)
         self.setLayout(self.layout)
         
+        self._segments = []
         self.addSegment()
         
         self.addButton.clicked.connect(self.addSegment)
@@ -58,6 +77,9 @@ class _SegmentList(QWidget):
         
         segment = SegmentWidget(self._min, self._max)
         self.layout.addWidget(segment, row, 0)
+        self._segments.append(segment)
+        segment.startValueChanged.connect(lambda value: self.segmentRangeChanged.emit(row-1, value, None))
+        segment.stopValueChanged.connect(lambda value: self.segmentRangeChanged.emit(row-1, None, value))
         
         # don't add remove button to first segment
         if row > 1:
@@ -66,6 +88,8 @@ class _SegmentList(QWidget):
                 
             self.layout.addWidget(removeButton, row, 1)
             removeButton.clicked.connect(lambda: self._removeSegment(row))
+            
+        self.requestNewSegment.emit()
             
     def setMaximum(self, value):
         """ Set maximum value for all segments """
@@ -81,6 +105,14 @@ class _SegmentList(QWidget):
             widget = self.layout.itemAtPosition(row, 0).widget()
             widget.setMinimum(self._min)
             
+    def setSegmentRange(self, idx, start=None, stop=None):
+        """ Set start/stop value of segment `idx` """
+        widget = self.layout.itemAtPosition(idx+1, 0).widget()
+        if start is not None:
+            widget.setStart(start)
+        if stop is not None:
+            widget.setStop(stop)
+            
     def _removeSegment(self, row):
         """ Remove segment from row `row` in layout (note that row 0 is 'add button') """
         for col in self.layout.columnCount():
@@ -88,6 +120,7 @@ class _SegmentList(QWidget):
             if (widget := item.widget()) is not None:
                 self.layout.removeWidget(widget)
                 widget.deleteLater()
+        self.requestRemoveSegment.emit(row-1)
                 
     def _makeRemoveButton(self):
         if (icon := QIcon.fromTheme('list-remove')) is not None:

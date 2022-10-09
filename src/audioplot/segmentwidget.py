@@ -61,6 +61,14 @@ class SegmentWidget(QWidget):
         for spinbox in self.boxes:
             spinbox.setMaximum(maximum)
             
+    def setStart(self, value):
+        """ Set `start` value """
+        self.startbox.setValue(value)
+        
+    def setStop(self, value):
+        """ Set `stop` value """
+        self.stopbox.setValue(value)
+            
     @Slot(float)
     def _startChanged(self, value):
         """ Emit :attr:`startValueChanged`. 

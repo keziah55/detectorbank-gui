@@ -5,13 +5,12 @@ Created on Sun Oct  9 14:44:18 2022
 
 @author: keziah
 """
-from pyqtgraph import (PlotWidget, PlotCurveItem, mkPen, mkBrush, InfiniteLine, 
-                       setConfigOptions)
+from pyqtgraph import PlotWidget, LinearRegionItem
 import numpy as np
 import os
 import soundfile as sf
 from qtpy.QtCore import Signal, Slot
-from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QDoubleSpinBox, QFileDialog, QPushButton
+from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QFileDialog, QPushButton
 from .segmentlist import SegmentList
 
 class AudioPlotWidget(QWidget):
@@ -24,7 +23,14 @@ class AudioPlotWidget(QWidget):
         self.plotLabel = None
         self.parent = parent
         
-        self._makePlot(parent, style=style)
+        self.plotWidget = AudioPlot()
+        self.segmentList = SegmentList()
+        
+        self.segmentList.requestNewSegment.connect(self.plotWidget.addSegment)
+        self.segmentList.requestRemoveSegment.connect(self.plotWidget.removeSegment)
+        self.segmentList.segmentRangeChanged.connect(self.plotWidget.setSegmentRange)
+        
+        self.plotWidget.requestSetSegmentRange.connect(self.segmentList.setSegmentRange)
         
         vbox = QVBoxLayout()
         
@@ -39,10 +45,6 @@ class AudioPlotWidget(QWidget):
         vbox.addLayout(hbox)
         
         self.setLayout(vbox)
-        
-    def _makePlot(self, *args, **kwargs):
-        self.plotWidget = AudioPlot(*args, **kwargs)
-        self.segmentList = SegmentList()
         
     def _selectAudioFile(self):
         fname, _ = QFileDialog.getOpenFileName(self, "Select audio file", os.getcwd(),
@@ -60,10 +62,56 @@ class AudioPlotWidget(QWidget):
         self.segmentList.setMaximum(len(audio)/sr)
         
 class AudioPlot(PlotWidget):
+    
+    requestSetSegmentRange = Signal(int, object, object)
+    """ **signal** requestSetSegmentRange(int `idx`, float `start`, float `stop`) 
+    
+        Emitted when a segment range is change by user.
+    """
+    
     def __init__(self, *args, **kwargs):
         super().__init__()
+        self.segments = []
+        
+        self._segmentBrushes = []
+        
         self.plotItem.setLabel('bottom',text='Time (s)')
+        self.addSegment()
     
     def setAudioData(self, data, sr):
+        """ Plot `data`, with sample rate `sr`. """
         x = np.linspace(0, len(data)/sr, len(data))
         self.plot(x, data)
+        self.segments[0].setRegion((0, len(data)/sr))
+        
+    def addSegment(self, start=None, stop=None):
+        """ Add a new segment selection, optionally supplying range. """
+        segment = LinearRegionItem()
+        self._setSegmentRange(segment, start, stop)
+        self.plotItem.addItem(segment)
+        self.segments.append(segment)
+        segment.sigRegionChangeFinished.connect(self._emitSetSegmentRange)
+        
+    def removeSegment(self, idx):
+        """ Remove segment at index `idx`. """
+        segment = self.segments.pop(idx)
+        self.plotItem.removeItem(segment)
+        
+    def _emitSetSegmentRange(self, segment):
+        """ Find `segment` in list and emit :attr:`requestSetSegmentRange` """
+        idx = self.segments.index(segment)
+        start, stop = segment.getRegion()
+        self.requestSetSegmentRange.emit(idx, start, stop)
+        
+    def _setSegmentRange(self, segment, start=None, stop=None):
+        """ Set bounds of LinearRegionItem `segment` """
+        if start is not None:
+            segment.lines[0].setValue(start)
+        if stop is not None:
+            segment.lines[1].setValue(stop)
+        
+    def setSegmentRange(self, idx, start=None, stop=None):
+        """ Update range of segment `idx` """
+        segment = self.segments[idx]
+        self._setSegmentRange(segment, start, stop)
+        
