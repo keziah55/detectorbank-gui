@@ -7,8 +7,7 @@ from qtpy.QtWidgets import QMainWindow, QDockWidget, QAction, QFileDialog
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from .audioplot import AudioPlotWidget
-import soundfile as sf
-import numpy as np
+from .audioread import read_audio
 import os
 
 class DBGui(QMainWindow):
@@ -46,12 +45,8 @@ class DBGui(QMainWindow):
     def _openAudio(self, fname):
         """ Read audio file and set audio plot """
         try:
-            audio, self.sr = sf.read(fname)
+            audio, self.sr = read_audio(fname)
     
-            if len(audio.shape) > 1:
-                # convert stereo to mono
-                audio = np.mean(audio, axis=-1)
-                
             self.audio = audio
             self.audioplot.setAudio(self.audio, self.sr)
             
