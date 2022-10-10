@@ -27,16 +27,16 @@ class _SegmentList(QWidget):
         Emitted when 'add' button clicked.
     """
     
-    segmentRangeChanged = Signal(int, object, object)
-    """ **signal** segmentRangeChanged(int `index`, float `min`, float `max`) 
-    
-        Emitted when a segment's range changed in spin box.
-    """
-    
     requestRemoveSegment = Signal(int)
     """ **signal** requestRemoveSegment(int `index`)
     
         Emitted when SegmentWidget removed.
+    """
+    
+    requestSetSegmentRange = Signal(int, object, object)
+    """ **signal** requestSetSegmentRange(int `index`, float `min`, float `max`) 
+    
+        Emitted when a segment's range changed in spin box.
     """
     
     def __init__(self, defaultMin=None, defaultMax=None):
@@ -50,6 +50,10 @@ class _SegmentList(QWidget):
         else:
             self.addButton = QPushButton("Add")
         self.addButton.setToolTip("Add new segment")
+        
+        # maintain list of segments so we can emit correct index with signals
+        # (layout count can be unreliable when widgets have been removed)
+        self._segments = [] 
             
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.addButton)
@@ -78,19 +82,25 @@ class _SegmentList(QWidget):
             stop = self._max
         
         segment = SegmentWidget(start, stop, colour=colour)
+        self._segments.append(segment)
         self.layout.insertWidget(row, segment)
         segmentLayout = segment.layout()
-        segment.startValueChanged.connect(lambda value: self.segmentRangeChanged.emit(row-1, value, None))
-        segment.stopValueChanged.connect(lambda value: self.segmentRangeChanged.emit(row-1, None, value))
+        segment.startValueChanged.connect(lambda value: self._segmentRangeChanged(segment, value, None))
+        segment.stopValueChanged.connect(lambda value: self._segmentRangeChanged(segment, None, value))
         
         if row > 1:
             # don't add remove button to first segment
             removeButton = self._makeRemoveButton()
             removeButton.setToolTip("Remove this segment")
             segmentLayout.addWidget(removeButton)
-            removeButton.clicked.connect(lambda: self._emitRemoveSegment(row))
+            removeButton.clicked.connect(lambda: self._emitRemoveSegment(segment))
         else:
             segmentLayout.addStretch()
+            
+    def _segmentRangeChanged(self, segment, start=None, stop=None):
+        """ Find index of `segment` and emit :attr:`requestSetSegmentRange` """
+        idx = self._segments.index(segment)
+        self.requestSetSegmentRange.emit(idx, start, stop)
             
     def setMaximum(self, value):
         """ Set maximum value for all segments """
@@ -114,15 +124,17 @@ class _SegmentList(QWidget):
             if stop is not None:
                 widget.setStop(stop)
             
-    def _emitRemoveSegment(self, row):
+    def _emitRemoveSegment(self, segment):
         """ Emit :attr:`requestRemoveSegment` with correct index. """
-        self.requestRemoveSegment.emit(row-1)
+        idx = self._segments.index(segment)
+        self.requestRemoveSegment.emit(idx)
             
     def removeSegment(self, idx):
         """ Remove segment from row `idx+1` in layout (note that row 0 is 'add button') """
         row = idx + 1
         if (widget := self.layout.itemAt(row).widget()) is not None:
             self.layout.removeWidget(widget)
+            self._segments.remove(widget)
             widget.deleteLater()
                 
     def _makeRemoveButton(self):

@@ -5,7 +5,7 @@ Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, mkColor
 from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QHBoxLayout, QWidget
+from qtpy.QtWidgets import QHBoxLayout, QWidget, QMenu
 from .segmentlist import SegmentList
 
 import numpy as np
@@ -49,7 +49,9 @@ class AudioPlotWidget(QWidget):
         
         self.segmentList.requestAddSegment.connect(self.addSegment)
         self.segmentList.requestRemoveSegment.connect(self.removeSegment)
-        self.segmentList.segmentRangeChanged.connect(self.setSegmentRange)
+        self.segmentList.requestSetSegmentRange.connect(self.setSegmentRange)
+        self.plotWidget.requestAddSegment.connect(self.addSegment)
+        self.plotWidget.requestRemoveSegment.connect(self.removeSegment)
         self.plotWidget.requestSetSegmentRange.connect(self.setSegmentRange)
         
         hbox = QHBoxLayout()
@@ -97,6 +99,18 @@ class AudioPlotWidget(QWidget):
         
 class AudioPlot(PlotWidget):
     
+    requestAddSegment = Signal(object, object)
+    """ **signal** requestAddSegment(float `start`, float `stop`) 
+    
+        Emitted when 'add segment' selected in context menu.
+    """
+    
+    requestRemoveSegment = Signal(int)
+    """ **signal** requestRemoveSegment(int `index`)
+    
+        Emitted when 'remove segment' selected in context menu.
+    """
+    
     requestSetSegmentRange = Signal(int, object, object)
     """ **signal** requestSetSegmentRange(int `idx`, float `start`, float `stop`) 
     
@@ -106,7 +120,15 @@ class AudioPlot(PlotWidget):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._segments = []
+        
+        self.contextMenu = QMenu()
+        self._addAction = self.contextMenu.addAction("Add segment")
+        self._addAction.triggered.connect(self._addSegmentAtMouse)
+        self._removeAction = self.contextMenu.addAction("Remove segment")
+        self._removeAction.triggered.connect(self._removeSegmentAtMouse)
+        self._contextMenuPos = None
         self.plotItem.setMenuEnabled(False)
+        
         self.plotItem.setLabel('bottom',text='Time (s)')
         
     @property
@@ -152,5 +174,41 @@ class AudioPlot(PlotWidget):
         segment = self._segments[idx]
         self._setSegmentRange(segment, start, stop)
         
-    def mouseClickEvent(self, event):
-        print(event)
+    def contextMenuEvent(self, event):
+        self._contextMenuPos = event.pos()
+        underMouse, idx = self._segmentUnderMouse()
+        allowRemove = underMouse and idx > 0 # disable 'remove segment' option if not over segment or over first segment
+        self._removeAction.setEnabled(allowRemove)
+        self.contextMenu.popup(self.mapToGlobal(event.pos()))
+        
+    @property
+    def _contextMenuPos(self):
+        """ Return x position of context menu in plot coordinates """
+        return self._contextMenuXPos
+        
+    @_contextMenuPos.setter
+    def _contextMenuPos(self, pos):
+        if pos is not None:
+            pos = self.plotItem.vb.mapSceneToView(pos).x()
+        self._contextMenuXPos = pos
+        
+    def _addSegmentAtMouse(self):
+        if self._contextMenuPos is not None:
+            self.requestAddSegment.emit(self._contextMenuXPos, None)
+            
+    def _removeSegmentAtMouse(self):
+        if self._contextMenuPos is not None:
+            pass
+        _, idx = self._segmentUnderMouse()
+        self.requestRemoveSegment(idx)
+            
+    def _segmentUnderMouse(self):
+        if self._contextMenuPos is None:
+            return False, None
+        for idx, segment in enumerate(self.segments):
+            t0, t1 = segment.time
+            if t0 <= self._contextMenuPos <= t1:
+                return True, idx
+        return False, None
+        
+            
