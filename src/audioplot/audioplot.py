@@ -23,21 +23,20 @@ class AudioPlotWidget(QWidget):
         alpha = "32"
         colours = ["#0000ff", "#ff0000", "#00ff00", "#ffe523", "#ed21ff", 
                    "#ff672b", "#9718ff", "#00ffaa"]
-        self._segmentColours = [mkColor(f"{colour}{alpha}") for colour in colours]
+        self._segmentColours = itertools.cycle([mkColor(f"{colour}{alpha}") for colour in colours])
         
-        self.plotWidget = AudioPlot(colours=self._segmentColours)
-        self.segmentList = SegmentList(colours=self._segmentColours)
+        self.plotWidget = AudioPlot()
+        self.segmentList = SegmentList()
         
-        self.segmentList.requestNewSegment.connect(self.plotWidget.addSegment)
-        self.segmentList.requestRemoveSegment.connect(self.plotWidget.removeSegment)
-        self.segmentList.segmentRangeChanged.connect(self.plotWidget.setSegmentRange)
-        
-        self.plotWidget.requestSetSegmentRange.connect(self.segmentList.setSegmentRange)
-        
-        vbox = QVBoxLayout()
+        self.segmentList.requestAddSegment.connect(self.addSegment)
+        self.segmentList.requestRemoveSegment.connect(self.removeSegment)
+        self.segmentList.segmentRangeChanged.connect(self.setSegmentRange)
+        self.plotWidget.requestSetSegmentRange.connect(self.setSegmentRange)
         
         self.selectFileButton = QPushButton("Select audio file")
         self.selectFileButton.clicked.connect(self._selectAudioFile)
+        
+        vbox = QVBoxLayout()
         vbox.addWidget(self.selectFileButton)
         
         hbox = QHBoxLayout()
@@ -45,8 +44,10 @@ class AudioPlotWidget(QWidget):
         hbox.addWidget(self.segmentList)
         
         vbox.addLayout(hbox)
-        
         self.setLayout(vbox)
+        
+        self._max = 1
+        self.addSegment(start=0, stop=self._max)
         
     def _selectAudioFile(self):
         fname, _ = QFileDialog.getOpenFileName(self, "Select audio file", os.getcwd(),
@@ -61,7 +62,31 @@ class AudioPlotWidget(QWidget):
             audio = np.mean(audio, axis=-1)
             
         self.plotWidget.setAudioData(audio, sr)
-        self.segmentList.setMaximum(len(audio)/sr)
+        self._max = len(audio)/sr
+        self.segmentList.setMaximum(self._max)
+        
+    def addSegment(self, start=None, stop=None):
+        """ Add segment in both plot and list. """
+        colour = next(self._segmentColours)
+        if start is None and len(self.plotWidget._segments) > 0:
+            # use time of last segment as start of new segment
+            start = max([segment.getRegion()[1] for segment in self.plotWidget._segments])
+            if start > self._max:
+                start = self._max
+        if stop is None:
+            stop = start + 1
+        self.plotWidget.addSegment(start=start, stop=stop, colour=colour)
+        self.segmentList.addSegment(start=start, stop=stop, colour=colour)
+        
+    def removeSegment(self, idx):
+        """ Remove segment at index `idx` from both plot and list. """
+        self.plotWidget.removeSegment(idx)
+        self.segmentList.removeSegment(idx)
+        
+    def setSegmentRange(self, idx, start=None, stop=None):
+        """ Update range of segment `idx` in both plot and list. """
+        self.plotWidget.setSegmentRange(idx, start=start, stop=stop)
+        self.segmentList.setSegmentRange(idx, start=start, stop=stop)
         
 class AudioPlot(PlotWidget):
     
@@ -71,37 +96,33 @@ class AudioPlot(PlotWidget):
         Emitted when a segment range is change by user.
     """
     
-    def __init__(self, colours, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__()
-        self.segments = []
-        self._colours = itertools.cycle(colours)
-        
+        self._segments = []
         self.plotItem.setLabel('bottom',text='Time (s)')
-        self.addSegment()
     
     def setAudioData(self, data, sr):
         """ Plot `data`, with sample rate `sr`. """
         x = np.linspace(0, len(data)/sr, len(data))
         self.plot(x, data)
-        self.segments[0].setRegion((0, len(data)/sr))
+        self._segments[0].setRegion((0, len(data)/sr))
         
-    def addSegment(self, start=None, stop=None):
+    def addSegment(self, start=None, stop=None, colour=None):
         """ Add a new segment selection, optionally supplying range. """
-        brush = next(self._colours)
-        segment = LinearRegionItem(brush=brush)
+        segment = LinearRegionItem(brush=colour)
         self._setSegmentRange(segment, start, stop)
         self.plotItem.addItem(segment)
-        self.segments.append(segment)
+        self._segments.append(segment)
         segment.sigRegionChangeFinished.connect(self._emitSetSegmentRange)
         
     def removeSegment(self, idx):
         """ Remove segment at index `idx`. """
-        segment = self.segments.pop(idx)
+        segment = self._segments.pop(idx)
         self.plotItem.removeItem(segment)
         
     def _emitSetSegmentRange(self, segment):
         """ Find `segment` in list and emit :attr:`requestSetSegmentRange` """
-        idx = self.segments.index(segment)
+        idx = self._segments.index(segment)
         start, stop = segment.getRegion()
         self.requestSetSegmentRange.emit(idx, start, stop)
         
@@ -114,6 +135,6 @@ class AudioPlot(PlotWidget):
         
     def setSegmentRange(self, idx, start=None, stop=None):
         """ Update range of segment `idx` """
-        segment = self.segments[idx]
+        segment = self._segments[idx]
         self._setSegmentRange(segment, start, stop)
         

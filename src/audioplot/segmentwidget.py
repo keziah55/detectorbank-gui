@@ -16,6 +16,10 @@ class SegmentWidget(QWidget):
         
         Parameters
         ----------
+        start : float, optional
+            Initial start value. Default is 0
+        stop : float, optional
+            Initial stop value. Default is 0
         minimum : float, optional
             Minimum value for the spinboxes. Default is 0. See also :meth:`setMinimum`
         maximum : float, optional
@@ -25,7 +29,7 @@ class SegmentWidget(QWidget):
     startValueChanged = Signal(float)
     stopValueChanged = Signal(float)
     
-    def __init__(self, minimum=None, maximum=None, colour=None):
+    def __init__(self, start=None, stop=None, minimum=None, maximum=None, colour=None):
         super().__init__()
         
         self.startbox = QDoubleSpinBox()
@@ -43,6 +47,12 @@ class SegmentWidget(QWidget):
         
         if maximum is not None:
             self.setMaximum(maximum)
+            
+        if start is not None:
+            self.startbox.setValue(start)
+            
+        if stop is not None:
+            self.stopbox.setValue(stop)
             
         self.startbox.valueChanged.connect(self._startChanged)
         self.stopbox.valueChanged.connect(self._stopChanged)
