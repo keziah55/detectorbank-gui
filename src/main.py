@@ -5,7 +5,8 @@ Created on Sun Oct  9 14:31:04 2022
 
 @author: keziah
 """
-from qtpy.QtWidgets import QMainWindow, QVBoxLayout
+from qtpy.QtWidgets import QMainWindow, QDockWidget
+from qtpy.QtCore import Qt
 from .audioplot import AudioPlotWidget
 
 class DBGui(QMainWindow):
@@ -15,4 +16,9 @@ class DBGui(QMainWindow):
         
         self.audioplot = AudioPlotWidget(self)
         
-        self.setCentralWidget(self.audioplot)
+        self.docks = {}
+        
+        for name, widget in [('Audio Input', self.audioplot)]:
+            dockwidget = QDockWidget(name)
+            dockwidget.setWidget(widget)
+            self.addDockWidget(Qt.LeftDockWidgetArea, dockwidget)
