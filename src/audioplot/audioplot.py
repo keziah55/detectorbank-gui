@@ -6,14 +6,14 @@ Created on Sun Oct  9 14:44:18 2022
 @author: keziah
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, mkColor
+from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QHBoxLayout, QWidget
+from .segmentlist import SegmentList
+
 import numpy as np
-import os
 import itertools
 from dataclasses import dataclass
 import soundfile as sf
-from qtpy.QtCore import Signal, Slot
-from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QFileDialog, QPushButton
-from .segmentlist import SegmentList
 
 @dataclass
 class SegmentRange:
@@ -55,29 +55,16 @@ class AudioPlotWidget(QWidget):
         self.segmentList.segmentRangeChanged.connect(self.setSegmentRange)
         self.plotWidget.requestSetSegmentRange.connect(self.setSegmentRange)
         
-        self.selectFileButton = QPushButton("Select audio file")
-        self.selectFileButton.clicked.connect(self._selectAudioFile)
-        
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.selectFileButton)
-        
         hbox = QHBoxLayout()
         hbox.addWidget(self.plotWidget)
         hbox.addWidget(self.segmentList)
         
-        vbox.addLayout(hbox)
-        self.setLayout(vbox)
+        self.setLayout(hbox)
         
         self._max = 1
         self.addSegment(start=0, stop=self._max)
         
-    def _selectAudioFile(self):
-        fname, _ = QFileDialog.getOpenFileName(self, "Select audio file", os.getcwd(),
-                                               "Audio files (*.wav)")
-        if fname is not None:
-            self._openAudio(fname)
-            
-    def _openAudio(self, fname):
+    def openAudio(self, fname):
         audio, self.sr = sf.read(fname)
 
         if len(audio.shape) > 1:
