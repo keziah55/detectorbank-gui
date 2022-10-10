@@ -15,8 +15,4 @@ class DBGui(QMainWindow):
         
         self.audioplot = AudioPlotWidget(self)
         
-        # layout = QVBoxLayout()
-        # layout.addWidget(self.audioplot)
-        # self.setLayout(layout)
-        
         self.setCentralWidget(self.audioplot)

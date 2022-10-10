@@ -3,7 +3,7 @@
 """
 QScrollArea where :class:`SegmentWidgets` can be added or removed.
 """
-from qtpy.QtWidgets import QGridLayout, QWidget, QPushButton, QScrollArea, QSizePolicy
+from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton, QScrollArea, QSizePolicy
 from qtpy.QtCore import Signal, Slot, Qt, QSize
 from qtpy.QtGui import QIcon
 from .segmentwidget import SegmentWidget
@@ -50,30 +50,28 @@ class _SegmentList(QWidget):
             self.addButton = QPushButton(icon, "")
         else:
             self.addButton = QPushButton("Add")
+        self.addButton.setToolTip("Add new segment")
             
-        self.layout = QGridLayout()
-        self.layout.addWidget(self.addButton, 0, 0, 1, 2)
-        # self._stretchItemRow = self.layout.rowCount()
-        # self.layout.setRowStretch(self._stretchItemRow, 10)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.addButton)
+        self.layout.addStretch()
         self.setLayout(self.layout)
         
         self.addButton.clicked.connect(self.requestAddSegment)
         
     def sizeHint(self):
-        if self.layout.rowCount() > 2:
+        if self.layout.count() > 3:
             return super().sizeHint()
         else:
             height = super().sizeHint().height()
             btn = self._makeRemoveButton()
-            width = super().sizeHint().width() + 20 # btn.width()
+            width = super().sizeHint().width() + btn.minimumSizeHint().width() + 20 # scroll bar pad
             return QSize(width, height)
         
     def addSegment(self, start=None, stop=None, colour=None):
         """ Add spin boxes for a new segment """
         
-        # remove stretch from (current) last row
-        # self.layout.setRowStretch(self._stretchItemRow, 0)
-        row = self.layout.rowCount()
+        row = self.layout.count() - 1 # last item is stretch
         
         if start is None:
             start = self._min
@@ -81,41 +79,37 @@ class _SegmentList(QWidget):
             stop = self._max
         
         segment = SegmentWidget(start, stop, colour=colour)
-        self.layout.addWidget(segment, row, 0)
+        self.layout.insertWidget(row, segment)
+        segmentLayout = segment.layout()
         segment.startValueChanged.connect(lambda value: self.segmentRangeChanged.emit(row-1, value, None))
         segment.stopValueChanged.connect(lambda value: self.segmentRangeChanged.emit(row-1, None, value))
         
-        # don't add remove button to first segment
         if row > 1:
+            # don't add remove button to first segment
             removeButton = self._makeRemoveButton()
             removeButton.setToolTip("Remove this segment")
-                
-            self.layout.addWidget(removeButton, row, 1)
+            segmentLayout.addWidget(removeButton)
             removeButton.clicked.connect(lambda: self._emitRemoveSegment(row))
-            
-        # add stretch to last row
-        # self._stretchItemRow += 1
-        # self.layout.setRowStretch(self._stretchItemRow, 10)
+        else:
+            segmentLayout.addStretch()
             
     def setMaximum(self, value):
         """ Set maximum value for all segments """
         self._max = value
-        for row in range(1, self.layout.rowCount()):
-            if (item := self.layout.itemAtPosition(row, 0)) is not None:
-                widget = item.widget()
+        for row in range(1, self.layout.count()):
+            if (widget := self.layout.itemAt(row).widget()) is not None:
                 widget.setMaximum(self._max)
             
     def setMinimum(self, value):
         """ Set minimum value for all segments """
         self._min = value
-        for row in range(1, self.layout.rowCount()):
-            widget = self.layout.itemAtPosition(row, 0).widget()
-            widget.setMinimum(self._min)
+        for row in range(1, self.layout.count()):
+            if (widget := self.layout.itemAt(row).widget()) is not None:
+                widget.setMinimum(self._min)
             
     def setSegmentRange(self, idx, start=None, stop=None):
         """ Set start/stop value of segment `idx` """
-        if (item := self.layout.itemAtPosition(idx+1, 0)) is not None:
-            widget = item.widget()
+        if (widget := self.layout.itemAt(idx+1).widget()) is not None:
             if start is not None:
                 widget.setStart(start)
             if stop is not None:
@@ -128,18 +122,16 @@ class _SegmentList(QWidget):
     def removeSegment(self, idx):
         """ Remove segment from row `idx+1` in layout (note that row 0 is 'add button') """
         row = idx + 1
-        for col in self.layout.columnCount():
-            item = self.layout.itemAtPosition(row, col)
-            if (widget := item.widget()) is not None:
-                self.layout.removeWidget(widget)
-                widget.deleteLater()
+        if (widget := self.layout.itemAt(row).widget()) is not None:
+            self.layout.removeWidget(widget)
+            widget.deleteLater()
                 
     def _makeRemoveButton(self):
         if (icon := QIcon.fromTheme('list-remove')) is not None:
             button = QPushButton(icon, "")
         else:
             button = QPushButton("Remove")
-        button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        # button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         return button
     
     def _clearSegments(self):
