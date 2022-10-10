@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Oct  9 14:44:18 2022
-
-@author: keziah
+Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, mkColor
 from qtpy.QtCore import Signal
@@ -13,7 +11,6 @@ from .segmentlist import SegmentList
 import numpy as np
 import itertools
 from dataclasses import dataclass
-import soundfile as sf
 
 @dataclass
 class SegmentRange:
@@ -22,14 +19,14 @@ class SegmentRange:
         By default these are stored as times; the equivalent sample values can 
         be accesssed via :meth:`samples`
     """
-    start : float
-    stop : float
+    start: float
+    stop: float
     sr: int
     
     @property
     def samples(self):
         """ Return tuple of start and stop times in samples """
-        return (self.start * self.sr, self.stop * self.sr)
+        return tuple([int(t*self.sr) for t in self.time])
     
     @property
     def time(self):
@@ -64,12 +61,9 @@ class AudioPlotWidget(QWidget):
         self._max = 1
         self.addSegment(start=0, stop=self._max)
         
-    def openAudio(self, fname):
-        audio, self.sr = sf.read(fname)
-
-        if len(audio.shape) > 1:
-            audio = np.mean(audio, axis=-1)
-            
+    def setAudio(self, audio, sr):
+        """ Set audio and sample rate. """
+        self.sr = sr
         self.plotWidget.setAudioData(audio, self.sr)
         self._max = len(audio)/self.sr
         self.segmentList.setMaximum(self._max)
@@ -97,9 +91,9 @@ class AudioPlotWidget(QWidget):
         self.plotWidget.setSegmentRange(idx, start=start, stop=stop)
         self.segmentList.setSegmentRange(idx, start=start, stop=stop)
         
-    def getSegments(self):
+    def getSegments(self) -> list[tuple]:
         """ Return list of start/stop samples """
-        return [segment.samples for segment in self.plotWidget.getSegments]
+        return [segment.samples for segment in self.plotWidget.segments]
         
 class AudioPlot(PlotWidget):
     
@@ -112,7 +106,13 @@ class AudioPlot(PlotWidget):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._segments = []
+        self.plotItem.setMenuEnabled(False)
         self.plotItem.setLabel('bottom',text='Time (s)')
+        
+    @property
+    def segments(self) -> list[SegmentRange]:
+        """ Return list of SegmentRanges """
+        return [SegmentRange(*segment.getRegion(), self.sr) for segment in self._segments]
     
     def setAudioData(self, data, sr):
         """ Plot `data`, with sample rate `sr`. """
@@ -152,6 +152,5 @@ class AudioPlot(PlotWidget):
         segment = self._segments[idx]
         self._setSegmentRange(segment, start, stop)
         
-    def getSegments(self):
-        """ Return list of tuples of start, stop times """
-        return [SegmentRange(*segment.getRegion(), self.sr) for segment in self._segments]
+    def mouseClickEvent(self, event):
+        print(event)
