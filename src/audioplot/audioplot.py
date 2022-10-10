@@ -3,9 +3,9 @@
 """
 Widget to display audio and select segments
 """
-from pyqtgraph import PlotWidget, LinearRegionItem, mkColor
-from qtpy.QtCore import Signal, Qt
-from qtpy.QtWidgets import QHBoxLayout, QWidget, QMenu
+from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
+from qtpy.QtCore import Signal, Slot, Qt
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel
 from qtpy.QtGui import QCursor
 from .segmentlist import SegmentList
 
@@ -51,6 +51,7 @@ class AudioPlotWidget(QWidget):
                    "#ff672b", "#9718ff", "#00ffaa"]
         self._segmentColours = itertools.cycle([mkColor(f"{colour}{alpha}") for colour in colours])
         
+        self.plotLabel = QLabel(self)
         self.plotWidget = AudioPlot(self)
         self.segmentList = SegmentList(self)
         
@@ -61,8 +62,15 @@ class AudioPlotWidget(QWidget):
         self.plotWidget.requestRemoveSegment.connect(self.removeSegment)
         self.plotWidget.requestSetSegmentRange.connect(self.setSegmentRange)
         
+        self.plotWidget.valuesUnderMouse.connect(self.setCrosshairLabel)
+        
+        plotLayout = QVBoxLayout()
+        plotLayout.addWidget(self.plotWidget)
+        plotLayout.addWidget(self.plotLabel)
+        
         hbox = QHBoxLayout()
-        hbox.addWidget(self.plotWidget)
+        # hbox.addWidget(self.plotWidget)
+        hbox.addLayout(plotLayout)
         hbox.addWidget(self.segmentList)
         
         self.setLayout(hbox)
@@ -109,6 +117,11 @@ class AudioPlotWidget(QWidget):
     def getSegments(self) -> list[tuple]:
         """ Return list of start/stop samples """
         return [segment.samples for segment in self.plotWidget.segments]
+    
+    def setCrosshairLabel(self, x, y):
+        """ Set plot label text """
+        if x >= 0:
+            self.plotLabel.setText(f"{x:g} seconds")
         
 class AudioPlot(PlotWidget):
     
@@ -130,12 +143,26 @@ class AudioPlot(PlotWidget):
         Emitted when a segment range is change by user.
     """
     
+    valuesUnderMouse = Signal(float, float)
+    """ **signal** valuesUnderMouse(float `x`, float `y`)
+    
+        Emitted when mouse hovers over plot.
+    """
+    
     def __init__(self, *args, parent=None, **kwargs):
         super().__init__(parent=parent)
         self._segments = []
         
         self.parent = parent
         
+        # cross hairs
+        self.vLine = InfiniteLine(angle=90, movable=False)
+        self.hLine = InfiniteLine(angle=0, movable=False)
+        self.plotItem.addItem(self.vLine, ignoreBounds=True)
+        self.plotItem.addItem(self.hLine, ignoreBounds=True)
+        self.plotItem.scene().sigMouseMoved.connect(self.mouseMoved)
+        
+        # context menu
         self.contextMenu = QMenu()
         self._addAction = self.contextMenu.addAction("Add segment")
         self._addAction.triggered.connect(self._addSegmentAtMouse)
@@ -153,7 +180,9 @@ class AudioPlot(PlotWidget):
     
     def setAudioData(self, data, sr):
         """ Plot `data`, with sample rate `sr`. """
-        self.plotItem.clear()
+        for dataitem in self.plotItem.listDataItems():
+            self.plotItem.removeItem(dataitem)
+            
         self.sr = sr
         x = np.linspace(0, len(data)/sr, len(data))
         self.plot(x, data)
@@ -243,3 +272,10 @@ class AudioPlot(PlotWidget):
                 except:
                     pass
             
+    @Slot(object)
+    def mouseMoved(self, pos):
+        if self.plotItem.sceneBoundingRect().contains(pos):
+            mousePoint = self.plotItem.vb.mapSceneToView(pos)
+            self.vLine.setPos(mousePoint.x())
+            self.hLine.setPos(mousePoint.y())
+            self.valuesUnderMouse.emit(mousePoint.x(), mousePoint.y())
