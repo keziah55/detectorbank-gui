@@ -5,6 +5,7 @@ Widget managing two spin boxes, to set the start and stop points of a segment.
 """
 from qtpy.QtWidgets import QHBoxLayout, QWidget, QDoubleSpinBox
 from qtpy.QtCore import Signal, Slot
+from qtpy.QtGui import QPalette
 
 class SegmentWidget(QWidget):
     """ Widget managing two spin boxes, to set the start and stop points of a segment.
@@ -24,11 +25,17 @@ class SegmentWidget(QWidget):
     startValueChanged = Signal(float)
     stopValueChanged = Signal(float)
     
-    def __init__(self, minimum=None, maximum=None):
+    def __init__(self, minimum=None, maximum=None, colour=None):
         super().__init__()
         
         self.startbox = QDoubleSpinBox()
         self.stopbox = QDoubleSpinBox()
+        
+        palette = self.startbox.palette()
+        if colour is not None:
+            palette.setColor(QPalette.Base, colour)
+        for box in self.boxes:
+            box.setPalette(palette)
         
         if minimum is None:
             minimum = 0

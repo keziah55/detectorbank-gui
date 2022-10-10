@@ -6,7 +6,8 @@ QScrollArea where :class:`SegmentWidgets` can be added or removed.
 from qtpy.QtWidgets import QGridLayout, QWidget, QPushButton, QScrollArea, QSizePolicy
 from qtpy.QtCore import Signal, Slot, Qt, QSize
 from qtpy.QtGui import QIcon
-from .segments import SegmentWidget
+from .segmentwidget import SegmentWidget
+import itertools
 
 class SegmentList(QScrollArea):
     def __init__(self, *args, **kwargs):
@@ -40,10 +41,10 @@ class _SegmentList(QWidget):
         Emitted when SegmentWidget removed.
     """
     
-    
-    def __init__(self, defaultMin=None, defaultMax=None):
+    def __init__(self, colours, defaultMin=None, defaultMax=None):
         super().__init__()
         
+        self._colours = itertools.cycle(colours)
         self._min = defaultMin
         self._max = defaultMax
         
@@ -75,7 +76,8 @@ class _SegmentList(QWidget):
         
         row = self.layout.rowCount()
         
-        segment = SegmentWidget(self._min, self._max)
+        colour = next(self._colours)
+        segment = SegmentWidget(self._min, self._max, colour=colour)
         self.layout.addWidget(segment, row, 0)
         self._segments.append(segment)
         segment.startValueChanged.connect(lambda value: self.segmentRangeChanged.emit(row-1, value, None))

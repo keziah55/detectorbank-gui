@@ -5,9 +5,10 @@ Created on Sun Oct  9 14:44:18 2022
 
 @author: keziah
 """
-from pyqtgraph import PlotWidget, LinearRegionItem
+from pyqtgraph import PlotWidget, LinearRegionItem, mkColor
 import numpy as np
 import os
+import itertools
 import soundfile as sf
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QFileDialog, QPushButton
@@ -15,16 +16,17 @@ from .segmentlist import SegmentList
 
 class AudioPlotWidget(QWidget):
     
-    def __init__(self, parent, style="dark"):
+    def __init__(self, parent=None):
         
-        super().__init__()
+        super().__init__(parent=parent)
         
-        self.plotState = None
-        self.plotLabel = None
-        self.parent = parent
+        alpha = "32"
+        colours = ["#0000ff", "#ff0000", "#00ff00", "#ffe523", "#ed21ff", 
+                   "#ff672b", "#9718ff", "#00ffaa"]
+        self._segmentColours = [mkColor(f"{colour}{alpha}") for colour in colours]
         
-        self.plotWidget = AudioPlot()
-        self.segmentList = SegmentList()
+        self.plotWidget = AudioPlot(colours=self._segmentColours)
+        self.segmentList = SegmentList(colours=self._segmentColours)
         
         self.segmentList.requestNewSegment.connect(self.plotWidget.addSegment)
         self.segmentList.requestRemoveSegment.connect(self.plotWidget.removeSegment)
@@ -69,11 +71,10 @@ class AudioPlot(PlotWidget):
         Emitted when a segment range is change by user.
     """
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, colours, *args, **kwargs):
         super().__init__()
         self.segments = []
-        
-        self._segmentBrushes = []
+        self._colours = itertools.cycle(colours)
         
         self.plotItem.setLabel('bottom',text='Time (s)')
         self.addSegment()
@@ -86,7 +87,8 @@ class AudioPlot(PlotWidget):
         
     def addSegment(self, start=None, stop=None):
         """ Add a new segment selection, optionally supplying range. """
-        segment = LinearRegionItem()
+        brush = next(self._colours)
+        segment = LinearRegionItem(brush=brush)
         self._setSegmentRange(segment, start, stop)
         self.plotItem.addItem(segment)
         self.segments.append(segment)
