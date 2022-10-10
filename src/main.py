@@ -7,15 +7,22 @@ from qtpy.QtWidgets import QMainWindow, QDockWidget, QAction, QFileDialog
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from .audioplot import AudioPlotWidget
+from .argswidget import AbsZArgsWidget
 from .audioread import read_audio
+from detectorbank import DetectorBank
 import os
 
 class DBGui(QMainWindow):
+    
+    dockAreas = {'left':Qt.LeftDockWidgetArea, 'right':Qt.RightDockWidgetArea,
+                 'top':Qt.TopDockWidgetArea, 'bottom':Qt.BottomDockWidgetArea}
     
     def __init__(self, *args, audioFile=None, profile=None, **kwargs):
         super().__init__(*args, **kwargs)
         
         self.audioplot = AudioPlotWidget(self)
+
+        self.argswidget = AbsZArgsWidget(self)
 
         self.createActions()
         self.connectActions()
@@ -26,10 +33,15 @@ class DBGui(QMainWindow):
         
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
         
-        for name, widget in [('Audio Input', self.audioplot)]:
+        self.widgets = {"audioinput":('Audio Input', self.audioplot, 'left'),
+                        "args":('Parameters',self.argswidget, 'right')}
+        
+        for key, values in self.widgets.items():
+            name, widget, area = values
+            dockarea = self.dockAreas[area]
             dockwidget = QDockWidget(name)
             dockwidget.setWidget(widget)
-            self.addDockWidget(Qt.LeftDockWidgetArea, dockwidget)
+            self.addDockWidget(dockarea, dockwidget)
             
         self._openAudioDir = os.getcwd()
         if audioFile is not None:
@@ -49,6 +61,7 @@ class DBGui(QMainWindow):
     
             self.audio = audio
             self.audioplot.setAudio(self.audio, self.sr)
+            self.argswidget.setParams(sr=self.sr)
             
             self._openAudioDir = os.path.dirname(fname)
             self._setTemporaryStatus(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
