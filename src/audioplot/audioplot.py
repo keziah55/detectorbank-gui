@@ -121,7 +121,7 @@ class AudioPlotWidget(QWidget):
     def setCrosshairLabel(self, x, y):
         """ Set plot label text """
         if x >= 0:
-            self.plotLabel.setText(f"{x:g} seconds")
+            self.plotLabel.setText(f"{x:g} seconds; {int(x*self.sr)} samples")
         
 class AudioPlot(PlotWidget):
     
@@ -172,6 +172,8 @@ class AudioPlot(PlotWidget):
         self.plotItem.setMenuEnabled(False)
         
         self.plotItem.setLabel('bottom',text='Time (s)')
+        
+        self.plotItem.showGrid(True, True)
         
     @property
     def segments(self) -> list[SegmentRange]:
