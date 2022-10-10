@@ -17,36 +17,48 @@ class DBGui(QMainWindow):
         super().__init__(*args, **kwargs)
         
         self.audioplot = AudioPlotWidget(self)
-        if audioFile is not None:
-            self._openAudio(audioFile)
-        
+
         self.createActions()
         self.connectActions()
         self.createToolBars()
+        
+        self.statusBar()
+        self._statusTimeout = 1500
+        
+        self.audioplot.statusMessage.connect(self._setTemporaryStatus)
         
         for name, widget in [('Audio Input', self.audioplot)]:
             dockwidget = QDockWidget(name)
             dockwidget.setWidget(widget)
             self.addDockWidget(Qt.LeftDockWidgetArea, dockwidget)
             
+        self._openAudioDir = os.getcwd()
+        if audioFile is not None:
+            self._openAudio(audioFile)
+            
     def _openAudioFile(self):
         """ Show open file dialog """
-        fname, _ = QFileDialog.getOpenFileName(self, "Select audio file", os.getcwd(),
-                                               "Audio files (*.wav)")
-        if fname is not None:
+        fname, _ = QFileDialog.getOpenFileName(
+            self, "Select audio file", self._openAudioDir, "Audio files (*.wav)")
+        if fname:
             self._openAudio(fname)
             
     def _openAudio(self, fname):
         """ Read audio file and set audio plot """
-        audio, self.sr = sf.read(fname)
-
-        if len(audio.shape) > 1:
-            # convert stereo to mono
-            audio = np.mean(audio, axis=-1)
+        try:
+            audio, self.sr = sf.read(fname)
+    
+            if len(audio.shape) > 1:
+                # convert stereo to mono
+                audio = np.mean(audio, axis=-1)
+                
+            self.audio = audio
+            self.audioplot.setAudio(self.audio, self.sr)
             
-        self.audio = audio
-        
-        self.audioplot.setAudio(self.audio, self.sr)
+            self._openAudioDir = os.path.dirname(fname)
+            self._setTemporaryStatus(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
+        except Exception as err:
+            self._setTemporaryStatus(f"Cound not open {os.path.basename(fname)}")
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
@@ -70,3 +82,6 @@ class DBGui(QMainWindow):
         self.runToolBar = self.addToolBar("Run")
         self.runToolBar.addAction(self.openAudioFileAction)
         self.runToolBar.addAction(self.analyseAction)
+        
+    def _setTemporaryStatus(self, msg):
+        self.statusBar().showMessage(msg, self._statusTimeout)

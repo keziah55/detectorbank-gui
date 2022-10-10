@@ -4,8 +4,9 @@
 Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, mkColor
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, Qt
 from qtpy.QtWidgets import QHBoxLayout, QWidget, QMenu
+from qtpy.QtGui import QCursor
 from .segmentlist import SegmentList
 
 import numpy as np
@@ -35,6 +36,12 @@ class SegmentRange:
 
 class AudioPlotWidget(QWidget):
     
+    statusMessage = Signal(str)
+    """ **signal** statusMessage(str `msg`)
+    
+        Emitted with a message for the status bar.
+    """
+    
     def __init__(self, parent=None):
         
         super().__init__(parent=parent)
@@ -44,8 +51,8 @@ class AudioPlotWidget(QWidget):
                    "#ff672b", "#9718ff", "#00ffaa"]
         self._segmentColours = itertools.cycle([mkColor(f"{colour}{alpha}") for colour in colours])
         
-        self.plotWidget = AudioPlot()
-        self.segmentList = SegmentList()
+        self.plotWidget = AudioPlot(self)
+        self.segmentList = SegmentList(self)
         
         self.segmentList.requestAddSegment.connect(self.addSegment)
         self.segmentList.requestRemoveSegment.connect(self.removeSegment)
@@ -83,10 +90,16 @@ class AudioPlotWidget(QWidget):
         self.plotWidget.addSegment(start=start, stop=stop, colour=colour)
         self.segmentList.addSegment(start=start, stop=stop, colour=colour)
         
+        msg = "New segment added"
+        if start is not None:
+            msg += f" at {start:g}s"
+        self.statusMessage.emit(msg)
+        
     def removeSegment(self, idx):
         """ Remove segment at index `idx` from both plot and list. """
         self.plotWidget.removeSegment(idx)
         self.segmentList.removeSegment(idx)
+        self.statusMessage.emit("Segment removed")
         
     def setSegmentRange(self, idx, start=None, stop=None):
         """ Update range of segment `idx` in both plot and list. """
@@ -117,9 +130,11 @@ class AudioPlot(PlotWidget):
         Emitted when a segment range is change by user.
     """
     
-    def __init__(self, *args, **kwargs):
-        super().__init__()
+    def __init__(self, *args, parent=None, **kwargs):
+        super().__init__(parent=parent)
         self._segments = []
+        
+        self.parent = parent
         
         self.contextMenu = QMenu()
         self._addAction = self.contextMenu.addAction("Add segment")
@@ -138,6 +153,7 @@ class AudioPlot(PlotWidget):
     
     def setAudioData(self, data, sr):
         """ Plot `data`, with sample rate `sr`. """
+        self.plotItem.clear()
         self.sr = sr
         x = np.linspace(0, len(data)/sr, len(data))
         self.plot(x, data)
@@ -176,9 +192,7 @@ class AudioPlot(PlotWidget):
         
     def contextMenuEvent(self, event):
         self._contextMenuPos = event.pos()
-        underMouse, idx = self._segmentUnderMouse()
-        allowRemove = underMouse and idx > 0 # disable 'remove segment' option if not over segment or over first segment
-        self._removeAction.setEnabled(allowRemove)
+        self._removeAction.setEnabled(self._allowRemove)
         self.contextMenu.popup(self.mapToGlobal(event.pos()))
         
     @property
@@ -192,6 +206,12 @@ class AudioPlot(PlotWidget):
             pos = self.plotItem.vb.mapSceneToView(pos).x()
         self._contextMenuXPos = pos
         
+    @property
+    def _allowRemove(self):
+        """ Return True if mouse is over a segment and the segment is not the first. """
+        underMouse, idx = self._segmentUnderMouse()
+        return underMouse and idx > 0 
+        
     def _addSegmentAtMouse(self):
         if self._contextMenuPos is not None:
             self.requestAddSegment.emit(self._contextMenuXPos, None)
@@ -200,7 +220,7 @@ class AudioPlot(PlotWidget):
         if self._contextMenuPos is not None:
             pass
         _, idx = self._segmentUnderMouse()
-        self.requestRemoveSegment(idx)
+        self.requestRemoveSegment.emit(idx)
             
     def _segmentUnderMouse(self):
         if self._contextMenuPos is None:
@@ -210,5 +230,16 @@ class AudioPlot(PlotWidget):
             if t0 <= self._contextMenuPos <= t1:
                 return True, idx
         return False, None
-        
+    
+    def keyPressEvent(self, event):
+        """ If delete key pressed over segment, request its removal """
+        if event.key() == Qt.Key_Delete:
+            self._contextMenuPos = self.mapFromGlobal(QCursor.pos())
+            if self._allowRemove:
+                self._removeSegmentAtMouse()
+            else:
+                try:
+                    self.parent.statusMessage.emit("Cannot remove first segment")
+                except:
+                    pass
             

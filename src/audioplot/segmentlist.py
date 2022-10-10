@@ -39,8 +39,8 @@ class _SegmentList(QWidget):
         Emitted when a segment's range changed in spin box.
     """
     
-    def __init__(self, defaultMin=None, defaultMax=None):
-        super().__init__()
+    def __init__(self, parent=None, defaultMin=None, defaultMax=None):
+        super().__init__(parent=parent)
         
         self._min = defaultMin
         self._max = defaultMax
@@ -142,7 +142,6 @@ class _SegmentList(QWidget):
             button = QPushButton(icon, "")
         else:
             button = QPushButton("Remove")
-        # button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         return button
     
     def _clearSegments(self):
