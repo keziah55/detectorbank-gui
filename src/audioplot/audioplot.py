@@ -5,10 +5,9 @@ Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
 from qtpy.QtCore import Signal, Slot, Qt
-from qtpy.QtWidgets import QVBoxLayout, QMenu, QLabel
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel
 from qtpy.QtGui import QCursor
 from .segmentlist import SegmentList
-from customQObjects.widgets import HSplitter
 
 import numpy as np
 import itertools
@@ -35,7 +34,7 @@ class SegmentRange:
         """ Return tuple of start and stop times in seconds """
         return (self.start, self.stop)
 
-class AudioPlotWidget(HSplitter):
+class AudioPlotWidget(QWidget):
     
     statusMessage = Signal(str)
     """ **signal** statusMessage(str `msg`)
@@ -69,8 +68,12 @@ class AudioPlotWidget(HSplitter):
         plotLayout.addWidget(self.plotWidget)
         plotLayout.addWidget(self.plotLabel)
         
-        self.addLayout(plotLayout)
-        self.addWidget(self.segmentList)
+        hbox = QHBoxLayout()
+        # hbox.addWidget(self.plotWidget)
+        hbox.addLayout(plotLayout)
+        hbox.addWidget(self.segmentList)
+        
+        self.setLayout(hbox)
         
         self.sr = None
         self._max = 1

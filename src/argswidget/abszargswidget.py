@@ -125,13 +125,16 @@ class _AbsZArgsWidget(QWidget):
         self.loadProfileButton = QPushButton("Load profile")
         self.saveProfileButton = QPushButton("Save profile")
         
+        self.restoreDefaultsButton.clicked.connect(self._setDefaults)
+        
         buttonLayout = QHBoxLayout()
-        for button in [self.restoreDefaultsButton, self.loadProfileButton, self.saveProfileButton]:
+        for button in [self.loadProfileButton, self.saveProfileButton]:
             buttonLayout.addWidget(button)
             
         layout = QVBoxLayout()
         layout.addLayout(buttonLayout)
         layout.addLayout(form)
+        layout.addWidget(self.restoreDefaultsButton)
             
         self.setLayout(layout)
         
@@ -154,9 +157,6 @@ class _AbsZArgsWidget(QWidget):
         return ret
     
     def _setDefaults(self):
-        
-        # sample rate is set by loading audio file, not by user directly
-        self.srWidget.setText("")
         
         # num threads
         numCores = os.cpu_count()
