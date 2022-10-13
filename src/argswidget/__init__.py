@@ -1,3 +1,3 @@
-from .abszargswidget import AbsZArgsWidget
+from .argswidget import ArgsWidget
 
-__all__ = ["AbsZArgsWidget"]
+__all__ = ["ArgsWidget"]

@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Oct 10 18:28:38 2022
-
-@author: keziah
+Form to edit DetectorBank args
 """
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-                            QGridLayout, QScrollArea)
+                            QGridLayout, QScrollArea, QDialog)
 from qtpy.QtCore import Qt
 from .valuewidgets import (ValueLabel, ValueLineEdit, ValueComboBox, ValueSpinBox,
                            ValueDoubleSpinBox)
+from .profiledialog import LoadDialog, SaveDialog
 from detectorbank import DetectorBank
 import os
 from dataclasses import dataclass
@@ -25,6 +24,7 @@ class Parameter:
 
     def __post_init__(self):
         self.label = QLabel(self.prettyName)
+        self.label.setAlignment(Qt.AlignRight)
         for widget in [self.label, self.widget]:
             widget.setToolTip(self.toolTip)
         
@@ -39,7 +39,7 @@ class Parameter:
         
 Feature = namedtuple("Feature", ["name", "value"]) # used when making combobox of DB features
 
-class AbsZArgsWidget(QScrollArea):
+class ArgsWidget(QScrollArea):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.widget = _AbsZArgsWidget(*args, **kwargs)
@@ -54,18 +54,6 @@ class _AbsZArgsWidget(QWidget):
     def __init__(self, parent=None, sr=None, profile=None, numThreads=None, freq=None, 
                  bw=None, method=None, freqNorm=None, ampNorm=None, damping=None, gain=None):
         super().__init__(parent)
-        
-        # sr (read only)
-        # num threads
-        # frequencies
-        # bandwidths
-        # numerical method
-        # freq norm
-        # amp norm
-        # damping
-        # gain
-        
-        form = QGridLayout()
         
         self.srWidget = ValueLabel(suffix=" Hz")
         self.threadsWidget = ValueSpinBox()
@@ -116,6 +104,7 @@ class _AbsZArgsWidget(QWidget):
             "ampNorm":Parameter("ampNorm", "Amplitude normalization", self.ampNormWidget, 
                                 "Whether to normalize amplitude response. Default is unnormalized")}
         
+        form = QGridLayout()
         for row, param in enumerate(self.widgets.values()):
             form.addWidget(param.label, row, 0)
             form.addWidget(param.widget, row, 1)
@@ -140,7 +129,24 @@ class _AbsZArgsWidget(QWidget):
         
         self._setDefaults()
         
-    def loadProfile(self, profile):
+        
+    # TODO load and save from profile
+    def loadProfile(self):
+        dialog = LoadDialog()
+        reply = dialog.exec_()
+        if reply == QDialog.Accecpted:
+            self._loadProfile(dialog.getProfileName())
+    
+    def saveProfile(self):
+        dialog = SaveDialog()
+        reply = dialog.exec_()
+        if reply == QDialog.Accecpted:
+            self._saveProfile(dialog.getProfileName())
+    
+    def _loadProfile(self, profile):
+        pass
+    
+    def _saveProfile(self, name):
         pass
     
     def setParams(self, **kwargs):

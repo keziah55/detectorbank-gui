@@ -10,6 +10,7 @@ from .audioplot import AudioPlotWidget
 from .argswidget import AbsZArgsWidget
 from .audioread import read_audio
 from detectorbank import DetectorBank
+import numpy as np
 import os
 
 class DBGui(QMainWindow):
@@ -70,10 +71,28 @@ class DBGui(QMainWindow):
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
-        # pass
-        # print(self.audioplot.getSegments())
-        args = self.argswidget.getArgs()
-        from pprint import pprint; pprint(args)
+        params = self.argswidget.getArgs()
+        from pprint import pprint; pprint(params)
+        
+        # TODO get audio segments
+        
+        det = self._makeDetectorBank(params)
+        z = np.zeros((len(params['freqs']), len(self.audio)), dtype=np.complex128)  
+        r = np.zeros(z.shape)
+        self._setStatus("Getting DetectorBank response")
+        det.getZ(z)
+        det.absZ(r, z)
+        
+    def _makeDetectorBank(self, params):
+        det_char = self._makeDetectorCharacteristics(params['freqs'], params['bws'])
+        features = params['method'] | params['freqNorm'] | params['ampNorm']
+        args = (self.sr, self.audio, params['numThreads'], det_char, features,
+                params['damping'], params['gain'])
+        det = DetectorBank(*args)
+        return det
+        
+    def _makeDetectorCharacteristics(self, freqs, bws):
+        return np.array(list(zip(freqs, bws)))
             
     def createActions(self):
         self.openAudioFileAction = QAction("&Open audio file", self, shortcut=QKeySequence.Open)
@@ -95,3 +114,6 @@ class DBGui(QMainWindow):
         
     def _setTemporaryStatus(self, msg):
         self.statusBar().showMessage(msg, self._statusTimeout)
+        
+    def _setStatus(self, msg):
+        self.statusBar().showMessage(msg)
