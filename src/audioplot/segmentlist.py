@@ -6,6 +6,7 @@ QScrollArea where :class:`SegmentWidgets` can be added or removed.
 from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton, QScrollArea
 from qtpy.QtCore import Signal,  Qt, QSize
 from qtpy.QtGui import QIcon
+from customQObjects.widgets import GroupBox
 from .segmentwidget import SegmentWidget
 
 class SegmentList(QScrollArea):
@@ -19,7 +20,7 @@ class SegmentList(QScrollArea):
     def __getattr__(self, name):
         return getattr(self.widget, name)
 
-class _SegmentList(QWidget):
+class _SegmentList(GroupBox):
     
     requestAddSegment = Signal()
     """ **signal** requestAddSegment() 
@@ -40,7 +41,7 @@ class _SegmentList(QWidget):
     """
     
     def __init__(self, parent=None, defaultMin=None, defaultMax=None):
-        super().__init__(parent=parent)
+        super().__init__(parent=parent, title="Segments", layout="vbox")
         
         self._min = defaultMin
         self._max = defaultMax
@@ -55,10 +56,10 @@ class _SegmentList(QWidget):
         # (layout count can be unreliable when widgets have been removed)
         self._segments = [] 
             
-        self.layout = QVBoxLayout()
+        # self.layout = QVBoxLayout()
         self.layout.addWidget(self.addButton)
         self.layout.addStretch()
-        self.setLayout(self.layout)
+        # self.setLayout(self.layout)
         
         self.addButton.clicked.connect(self.requestAddSegment)
         
