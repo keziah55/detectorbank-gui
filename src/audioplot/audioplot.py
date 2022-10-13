@@ -75,6 +75,7 @@ class AudioPlotWidget(QWidget):
         
         self.setLayout(hbox)
         
+        self.sr = None
         self._max = 1
         self.addSegment(start=0, stop=self._max)
         
@@ -120,7 +121,7 @@ class AudioPlotWidget(QWidget):
     
     def setCrosshairLabel(self, x, y):
         """ Set plot label text """
-        if x >= 0:
+        if self.sr is not None and x >= 0:
             self.plotLabel.setText(f"{x:g} seconds; {int(x*self.sr)} samples")
         
 class AudioPlot(PlotWidget):

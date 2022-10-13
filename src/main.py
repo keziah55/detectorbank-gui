@@ -50,7 +50,7 @@ class DBGui(QMainWindow):
     def _openAudioFile(self):
         """ Show open file dialog """
         fname, _ = QFileDialog.getOpenFileName(
-            self, "Select audio file", self._openAudioDir, "Audio files (*.wav)")
+            self, "Select audio file", self._openAudioDir, "Wav files (*.wav);;All files (*)")
         if fname:
             self._openAudio(fname)
             
@@ -70,8 +70,10 @@ class DBGui(QMainWindow):
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
-        pass
+        # pass
         # print(self.audioplot.getSegments())
+        args = self.argswidget.getArgs()
+        from pprint import pprint; pprint(args)
             
     def createActions(self):
         self.openAudioFileAction = QAction("&Open audio file", self, shortcut=QKeySequence.Open)

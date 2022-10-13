@@ -5,12 +5,39 @@ Created on Mon Oct 10 18:28:38 2022
 
 @author: keziah
 """
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                            QFormLayout, QSpinBox, QDoubleSpinBox, QScrollArea)
+from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+                            QGridLayout, QScrollArea)
 from qtpy.QtCore import Qt
-from .valuewidgets import ValueLabel, ValueLineEdit, ValueComboBox
+from .valuewidgets import (ValueLabel, ValueLineEdit, ValueComboBox, ValueSpinBox,
+                           ValueDoubleSpinBox)
 from detectorbank import DetectorBank
 import os
+from dataclasses import dataclass
+from collections import namedtuple
+
+@dataclass
+class Parameter:
+    name : str
+    prettyName : str
+    widget : QWidget # must have `value` property
+    toolTip : str = None
+    castType: object = None
+
+    def __post_init__(self):
+        self.label = QLabel(self.prettyName)
+        for widget in [self.label, self.widget]:
+            widget.setToolTip(self.toolTip)
+        
+    @property
+    def value(self):
+        """ Return value, cast to type if `castType` is not None """
+        value = self.widget.value
+        if self.castType is not None:
+            return self.castType(value)
+        else:
+            return value
+        
+Feature = namedtuple("Feature", ["name", "value"]) # used when making combobox of DB features
 
 class AbsZArgsWidget(QScrollArea):
     def __init__(self, *args, **kwargs):
@@ -29,7 +56,7 @@ class _AbsZArgsWidget(QWidget):
         super().__init__(parent)
         
         # sr (read only)
-        # num threads (combobox)
+        # num threads
         # frequencies
         # bandwidths
         # numerical method
@@ -38,51 +65,61 @@ class _AbsZArgsWidget(QWidget):
         # damping
         # gain
         
-        form = QFormLayout()
+        form = QGridLayout()
         
-        self.srWidget = ValueLabel()
-        self.threadsWidget = QSpinBox()
+        self.srWidget = ValueLabel(suffix=" Hz")
+        self.threadsWidget = ValueSpinBox()
         self.freqWidget = ValueLineEdit()
         self.bwWidget = ValueLineEdit()
-        self.dampingWidget = QDoubleSpinBox()
-        self.gainWidget = QDoubleSpinBox()
-        self.methodWidget = ValueComboBox()
-        self.freqNormWidget = ValueComboBox()
-        self.ampNormWidget = ValueComboBox()
-        
-        self.methodWidget.addItems(["Fourth order Runge-Kutta", "Central difference"])
-        self.freqNormWidget.addItems(["Unnormalized", "Search normalized"])
-        self.ampNormWidget.addItems(["Unnormalized", "Normalized"])
-        
-        self.srWidget.setToolTip("Sample rate of audio file")
-        self.threadsWidget.setToolTip("Number of threads to execute concurrently to determine "
-                                      "the detector outputs. Passing a value of less than 1 causes the number "
-                                      "of threads to be set according to the number of reported CPU cores")
-        self.freqWidget.setToolTip("Frequencies to detect")
-        self.bwWidget.setToolTip("Bandwidth(s) of detectors")
-        self.dampingWidget.setToolTip("Damping factor for all detectors. Default is 0.0001. Sensible range is between 0.0001 and 0.0005")
-        self.gainWidget.setToolTip("Gain applied to output. Default is 25")
-        self.methodWidget.setToolTip("Numerical method used to solve equation. Default is fourth order Runge-Kutta")
-        self.freqNormWidget.setToolTip("Whether to normalize frequency. Default is unnormalized")
-        self.ampNormWidget.setToolTip("Whether to normalize amplitude response. Default is unnormalized")
+        self.dampingWidget = ValueDoubleSpinBox()
+        self.gainWidget = ValueDoubleSpinBox()
+        self.methodWidget = ValueComboBox(
+            values=[Feature("Fourth order Runge-Kutta", DetectorBank.runge_kutta),
+                    Feature("Central difference", DetectorBank.central_difference)])
+        self.freqNormWidget = ValueComboBox(
+            values=[Feature("Unnormalized", DetectorBank.freq_unnormalized),
+                    Feature("Search normalized", DetectorBank.search_normalized)])
+        self.ampNormWidget = ValueComboBox(
+            values=[Feature("Unnormalized", DetectorBank.amp_unnormalized),
+                    Feature("Normalized", DetectorBank.amp_normalized)])
         
         self.dampingWidget.setSingleStep(0.0001)
         self.dampingWidget.setDecimals(5)
         
-        self.widgets = {"sr":(self.srWidget, "Sample rate"), 
-                        "numThreads":(self.threadsWidget, "Threads"), 
-                        "freqs":(self.freqWidget, "Frequencies"),
-                        "bws":(self.bwWidget, "Bandwidths"),
-                        "damping":(self.dampingWidget, "Damping"),
-                        "gain":(self.gainWidget, "Gain"),
-                        "method":(self.methodWidget, "Numerical method"),
-                        "freqNorm":(self.freqNormWidget, "Frequency normalization"),
-                        "ampNorm":(self.ampNormWidget, "Amplitude normalization")}
+        # make dict of widgets
+        # Parameter objects automatically make labels and set tool tips
+        self.widgets = {
+            "sr":Parameter(
+                "sr", "Sample rate", self.srWidget, "Sample rate of audio file", float), 
+            "numThreads":Parameter(
+                "numThreads", "Threads", self.threadsWidget, 
+                "Number of threads to execute concurrently to determine the detector outputs. "
+                "Passing a value of less than 1 causes the number of threads to "
+                "be set according to the number of reported CPU cores",
+                int), 
+            "freqs":Parameter(
+                "freqs", "Frequencies", self.freqWidget, "Frequencies to detect"),
+            "bws":Parameter(
+                "bws", "Bandwidths", self.bwWidget, "Bandwidth(s) of detectors"),
+            "damping":Parameter(
+                "damping", "Damping", self.dampingWidget, 
+                "Damping factor for all detectors. Default is 0.0001. "
+                "Sensible range is between 0.0001 and 0.0005",
+                float),
+            "gain":Parameter(
+                "gain", "Gain", self.gainWidget, "Gain applied to output. Default is 25", float),
+            "method":Parameter("method", "Numerical method", self.methodWidget, 
+                               "Numerical method used to solve equation. "
+                               "Default is fourth order Runge-Kutta"),
+            "freqNorm":Parameter("freqNorm", "Frequency normalization", self.freqNormWidget, 
+                                 "Whether to normalize frequency. Default is unnormalized"),
+            "ampNorm":Parameter("ampNorm", "Amplitude normalization", self.ampNormWidget, 
+                                "Whether to normalize amplitude response. Default is unnormalized")}
         
-        for widget, label in self.widgets.values():
-            form.addRow(label, widget)
-            labelWidget = form.labelForField(widget)
-            labelWidget.setToolTip(widget.toolTip())
+        for row, param in enumerate(self.widgets.values()):
+            form.addWidget(param.label, row, 0)
+            form.addWidget(param.widget, row, 1)
+        form.setRowStretch(row+1, 10)
         
         self.restoreDefaultsButton = QPushButton("Restore defaults")
         self.loadProfileButton = QPushButton("Load profile")
@@ -100,19 +137,21 @@ class _AbsZArgsWidget(QWidget):
         
         self._setDefaults()
         
-        
     def loadProfile(self, profile):
         pass
     
     def setParams(self, **kwargs):
+        """ Set arg value in form """
         for name, value in kwargs.items():
-            if (tup := self.widgets.get(name, None)) is not None:
-                widget = tup[0]
-                widget.setValue(value)
+            if (param := self.widgets.get(name, None)) is not None:
+                param.widget.setValue(value)
     
     def getArgs(self) -> dict:
         """ Return dict of DetectorBank args """
-        pass
+        ret = {}
+        for name, param in self.widgets.items():
+            ret[name] = param.value
+        return ret
     
     def _setDefaults(self):
         
