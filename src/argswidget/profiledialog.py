@@ -3,7 +3,7 @@
 """
 Dialogs to select profile to load or choose name to save.
 """
-from pyqt.QtWidget import QDialog
+from qtpy.QtWidgets import QDialog
 
 class LoadDialog(QDialog):
     def getProfileName(self):

@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QMainWindow, QDockWidget, QAction, QFileDialog
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from .audioplot import AudioPlotWidget
-from .argswidget import AbsZArgsWidget
+from .argswidget import ArgsWidget
 from .audioread import read_audio
 from detectorbank import DetectorBank
 import numpy as np
@@ -23,7 +23,7 @@ class DBGui(QMainWindow):
         
         self.audioplot = AudioPlotWidget(self)
 
-        self.argswidget = AbsZArgsWidget(self)
+        self.argswidget = ArgsWidget(self)
 
         self.createActions()
         self.connectActions()
