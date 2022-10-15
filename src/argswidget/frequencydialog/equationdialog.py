@@ -62,12 +62,13 @@ class EquationPage(AbstractFrequencyPage):
     def _getValues(self):
         freq = float(self.refFreqBox.value())
         edo = int(self.edoBox.value())
-        n0 = int(self.n0Box.value())
-        n1 = int(self.n1Box.value())
+        n0, n1 = sorted([int(box.value()) for box in [self.n0Box, self.n1Box]])
+        n1 += 1
         return freq, edo, n0, n1
         
     def _valueChanged(self):
         freq, edo, n0, n1 = self._getValues()
+        n1 -= 1
         f0 = freq * 2**(n0/edo)
         f1 = freq * 2**(n1/edo)
         self.equationLabel.setText(f"{freq:g} * 2^({n0}/{edo}) = {f0:g} Hz\n{freq:g} * 2^({n1}/{edo}) = {f1:g} HZ")

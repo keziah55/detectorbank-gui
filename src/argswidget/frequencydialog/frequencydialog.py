@@ -4,15 +4,15 @@
 Dialog to edit detector frequencies and bandwidths
 """
 
-from qtpy.QtWidgets import (QDialog, QTableWidget, QRadioButton, QVBoxLayout,  
-                            QDialogButtonBox, QWidget)
-from qtpy.QtCore import Signal, QObject
+from qtpy.QtWidgets import (QDialog, QTableWidget, QTableWidgetItem, QRadioButton, QVBoxLayout,  
+                            QVBoxLayout, QDialogButtonBox, QWidget)
+from qtpy.QtCore import Signal, QObject, Qt
 from customQObjects.widgets import GroupBox, StackedWidget
 from .noterange import NoteRangePage
 from .equationdialog import EquationPage
     
 class ManualPage(QWidget):
-    pass
+    frequencies = Signal(object)
 
 
 class FrequencyInputSelector(QObject):
@@ -57,13 +57,12 @@ class FrequencyDialog(QDialog):
             self.inputSelect.addWidget(selector.radioButton)
             selector.selected.connect(self._changePage)
             self.freqRangeStack.addWidget(selector.page, selector.name)
+            selector.page.frequencies.connect(self._setTableFrequencies)
             
         self.freqRangeWidgets["note_range"].setSelected()
         
-        self.tableWidgets = {key:QTableWidget(0,2) for key in self.freqRangeWidgets}
-        for table in self.tableWidgets.values():
-            table.setHorizontalHeaderLabels(["Frequency", "Bandwidth"])
-        self.tableStack = StackedWidget(pages=self.tableWidgets)
+        self.table = QTableWidget(0,2) 
+        self._setTableFrequencies([])
         
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
         
@@ -75,7 +74,7 @@ class FrequencyDialog(QDialog):
         layout = QVBoxLayout()
         layout.addWidget(self.inputSelect)
         layout.addWidget(self.freqRangeStack)
-        layout.addWidget(self.tableStack)
+        layout.addWidget(self.table)
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
         
@@ -83,3 +82,13 @@ class FrequencyDialog(QDialog):
         
     def _changePage(self, key, prettyName):
         self.freqRangeStack.setCurrentKey(key)
+        
+    def _setTableFrequencies(self, freq):
+        self.table.clear()
+        self.table.setHorizontalHeaderLabels(["Frequency (Hz)", "Bandwidth (Hz)"])
+        self.table.setRowCount(len(freq))
+        for row, f in enumerate(freq):
+            item = QTableWidgetItem(f"{f:g}")
+            item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            self.table.setItem(row, 0, item)
+            
