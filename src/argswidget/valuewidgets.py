@@ -4,7 +4,7 @@
 QWidgets with `setValue` method and `value` property.
 """
 from qtpy.QtWidgets import QLabel, QLineEdit, QSpinBox, QDoubleSpinBox
-from customQObjects.widgets import ComboBox
+from customQObjects.widgets import ComboBox, ElideLabel
 
 class ValueLabel(QLabel):
     def __init__(self, *args, suffix="", **kwargs):

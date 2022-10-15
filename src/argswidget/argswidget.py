@@ -6,8 +6,10 @@ Form to edit DetectorBank args
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
                             QGridLayout, QScrollArea, QDialog)
 from qtpy.QtCore import Qt
+from customQObjects.widgets import ElideLabel
 from .valuewidgets import (ValueLabel, ValueLineEdit, ValueComboBox, ValueSpinBox,
                            ValueDoubleSpinBox)
+from .frequencydialog import FrequencyDialog
 from .profiledialog import LoadDialog, SaveDialog
 from detectorbank import DetectorBank
 import os
@@ -16,13 +18,15 @@ from collections import namedtuple
 
 @dataclass
 class Parameter:
-    name : str
-    prettyName : str
-    widget : QWidget # must have `value` property
-    toolTip : str = None
+    name: str
+    widget: QWidget # must have `value` property
+    prettyName: str = None
+    toolTip: str = None
     castType: object = None
 
     def __post_init__(self):
+        if self.prettyName is None:
+            self.prettyName = self.name
         self.label = QLabel(self.prettyName)
         self.label.setAlignment(Qt.AlignRight)
         for widget in [self.label, self.widget]:
@@ -57,8 +61,8 @@ class _AbsZArgsWidget(QWidget):
         
         self.srWidget = ValueLabel(suffix=" Hz")
         self.threadsWidget = ValueSpinBox()
-        self.freqWidget = ValueLineEdit()
-        self.bwWidget = ValueLineEdit()
+        self.freqWidget = ElideLabel("Select frequencies and bandwidths")
+        self.bwWidget = ElideLabel("Select frequencies and bandwidths")
         self.dampingWidget = ValueDoubleSpinBox()
         self.gainWidget = ValueDoubleSpinBox()
         self.methodWidget = ValueComboBox(
@@ -71,6 +75,10 @@ class _AbsZArgsWidget(QWidget):
             values=[Feature("Unnormalized", DetectorBank.amp_unnormalized),
                     Feature("Normalized", DetectorBank.amp_normalized)])
         
+        self._freqBwDialog = FrequencyDialog()
+        
+        self.freqWidget.clicked.connect(self._showFreqBwDialog)
+        self.bwWidget.clicked.connect(self._showFreqBwDialog)
         self.dampingWidget.setSingleStep(0.0001)
         self.dampingWidget.setDecimals(5)
         
@@ -78,30 +86,30 @@ class _AbsZArgsWidget(QWidget):
         # Parameter objects automatically make labels and set tool tips
         self.widgets = {
             "sr":Parameter(
-                "sr", "Sample rate", self.srWidget, "Sample rate of audio file", float), 
+                "sr", self.srWidget, "Sample rate", "Sample rate of audio file", float), 
             "numThreads":Parameter(
-                "numThreads", "Threads", self.threadsWidget, 
+                "numThreads", self.threadsWidget, "Threads", 
                 "Number of threads to execute concurrently to determine the detector outputs. "
                 "Passing a value of less than 1 causes the number of threads to "
                 "be set according to the number of reported CPU cores",
                 int), 
             "freqs":Parameter(
-                "freqs", "Frequencies", self.freqWidget, "Frequencies to detect"),
+                "freqs", self.freqWidget, "Frequencies", "Frequencies to detect"),
             "bws":Parameter(
-                "bws", "Bandwidths", self.bwWidget, "Bandwidth(s) of detectors"),
+                "bws", self.bwWidget, "Bandwidths", "Bandwidth(s) of detectors"),
             "damping":Parameter(
-                "damping", "Damping", self.dampingWidget, 
+                "damping", self.dampingWidget, "Damping", 
                 "Damping factor for all detectors. Default is 0.0001. "
                 "Sensible range is between 0.0001 and 0.0005",
                 float),
             "gain":Parameter(
-                "gain", "Gain", self.gainWidget, "Gain applied to output. Default is 25", float),
-            "method":Parameter("method", "Numerical method", self.methodWidget, 
+                "gain", self.gainWidget, "Gain", "Gain applied to output. Default is 25", float),
+            "method":Parameter("method", self.methodWidget, "Numerical method", 
                                "Numerical method used to solve equation. "
                                "Default is fourth order Runge-Kutta"),
-            "freqNorm":Parameter("freqNorm", "Frequency normalization", self.freqNormWidget, 
+            "freqNorm":Parameter("freqNorm", self.freqNormWidget, "Frequency normalization", 
                                  "Whether to normalize frequency. Default is unnormalized"),
-            "ampNorm":Parameter("ampNorm", "Amplitude normalization", self.ampNormWidget, 
+            "ampNorm":Parameter("ampNorm", self.ampNormWidget, "Amplitude normalization", 
                                 "Whether to normalize amplitude response. Default is unnormalized")}
         
         form = QGridLayout()
@@ -148,6 +156,9 @@ class _AbsZArgsWidget(QWidget):
     
     def _saveProfile(self, name):
         pass
+    
+    def _showFreqBwDialog(self):
+        self._freqBwDialog.exec_()
     
     def setParams(self, **kwargs):
         """ Set arg value in form """

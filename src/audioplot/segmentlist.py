@@ -3,7 +3,7 @@
 """
 QScrollArea where :class:`SegmentWidgets` can be added or removed.
 """
-from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton, QScrollArea
+from qtpy.QtWidgets import QPushButton, QScrollArea
 from qtpy.QtCore import Signal,  Qt, QSize
 from qtpy.QtGui import QIcon
 from customQObjects.widgets import GroupBox
