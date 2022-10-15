@@ -158,7 +158,11 @@ class _AbsZArgsWidget(QWidget):
         pass
     
     def _showFreqBwDialog(self):
-        self._freqBwDialog.exec_()
+        reply = self._freqBwDialog.exec_()
+        if reply == QDialog.Accepted:
+            print(self._freqBwDialog.value)
+        else:
+            print("cancelled")
     
     def setParams(self, **kwargs):
         """ Set arg value in form """

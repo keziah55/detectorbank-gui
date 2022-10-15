@@ -37,7 +37,7 @@ class NoteRangeInfo:
             self.freqLabel.setText(f"{self.freq:g} Hz")
         else:
             self.freq = None
-            self.freqLabel.setText("")
+            self.freqLabel.setText(" Hz")
         
     def setValid(self, valid):
         self.valid = valid
@@ -54,14 +54,14 @@ class NoteRangePage(AbstractPage):
     def __init__(self, *args, defaultStart="A0", defaultEnd="C8", invalidColour="#ff0000", **kwargs):
         super().__init__(*args, name="frequencies", **kwargs)
         
-        self.widgets = {"start":NoteRangeInfo("Start note:"),
-                        "end":NoteRangeInfo("End note:")}
+        self.widgets = {"start":NoteRangeInfo("Start note:", invalidColour=invalidColour),
+                        "end":NoteRangeInfo("End note:", invalidColour=invalidColour)}
         
         self.timers = {}
         for key in self.widgets:
             timer = QTimer()
             timer.setSingleShot(True)
-            timer.setInterval(50)
+            timer.setInterval(100)
             self.timers[key] = timer
             
         self.timers["start"].timeout.connect(lambda: self._textChanged("start"))

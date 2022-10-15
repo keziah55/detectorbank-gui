@@ -84,7 +84,7 @@ class FrequencyDialog(QDialog):
         self.freqRangeSelect = GroupBox("Frequency input")
         self.freqRangeStack = StackedWidget()
         self.freqRangeWidgets = {
-            "note_range":freqRangeSelector("note_range", NoteRangePage(), "Note range"), 
+            "note_range":freqRangeSelector("note_range", NoteRangePage(invalidColour="#790000"), "Note range"), 
             "equation":freqRangeSelector("equation", EquationPage(), "Equation"), 
             "manual":freqRangeSelector("manual", QWidget(), "Manual")}
         
