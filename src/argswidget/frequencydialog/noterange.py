@@ -7,9 +7,9 @@ Created on Sat Oct 15 17:27:07 2022
 """
 
 from qtpy.QtWidgets import QLineEdit, QWidget, QLabel
-from qtpy.QtCore import QTimer, Qt
+from qtpy.QtCore import QTimer
 from qtpy.QtGui import QPalette, QColor
-from .abstractpage import AbstractPage
+from .abstractpage import AbstractPage, RightLabel
 import numpy as np
 import re
 from dataclasses import dataclass
@@ -22,8 +22,7 @@ class NoteRangeInfo:
     invalidColour: str = "#ff0000"
     
     def __post_init__(self):
-        self.label = QLabel(self.name)
-        self.label.setAlignment(Qt.AlignRight)
+        self.label = RightLabel(self.name)
         self.edit = QLineEdit()
         self.freqLabel = QLabel()
         palette = self.edit.palette()

@@ -5,11 +5,16 @@ Created on Sat Oct 15 18:49:19 2022
 
 @author: keziah
 """
-from qtpy.QtWidgets import QGridLayout, QWidget, QPushButton
-from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QGridLayout, QWidget, QPushButton, QLabel
+from qtpy.QtCore import Signal, Qt
 import numpy as np
 from abc import abstractmethod
 
+class RightLabel(QLabel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setAlignment(Qt.AlignCenter)
+        
 class AbstractPage(QWidget):
     valid = Signal(bool)
     

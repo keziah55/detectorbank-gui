@@ -5,9 +5,10 @@ Created on Sat Oct 15 18:04:03 2022
 
 @author: keziah
 """
-from qtpy.QtWidgets import QLabel, QSpinBox, QDoubleSpinBox
+from qtpy.QtWidgets import QLabel
 from qtpy.QtCore import Qt
-from .abstractpage import AbstractPage
+from customQObjects.widgets import SpinBox, DoubleSpinBox
+from .abstractpage import AbstractPage, RightLabel
 import numpy as np
 
 class EquationPage(AbstractPage):
@@ -18,28 +19,24 @@ class EquationPage(AbstractPage):
         self.equationLabel = QLabel()
         self.equationLabel.setAlignment(Qt.AlignCenter)
 
-        refFreqLabel = QLabel("Ref. frequency:")
-        refFreqLabel.setAlignment(Qt.AlignRight)
-        self.refFreqBox = QDoubleSpinBox()
-        self.refFreqBox.setMaximum(240000)
+        refFreqLabel = RightLabel("Ref. frequency:")
+        self.refFreqBox = DoubleSpinBox()
+        self.refFreqBox.setMaximum()
         self.refFreqBox.setValue(440)
         self.refFreqBox.setSuffix(" Hz")
         
-        edoLabel = QLabel("EDO:")
-        edoLabel.setAlignment(Qt.AlignRight)
-        self.edoBox = QSpinBox()
+        edoLabel = RightLabel("EDO:")
+        self.edoBox = SpinBox()
         self.edoBox.setValue(12)
         
-        n0Label = QLabel("n0:")
-        n0Label.setAlignment(Qt.AlignRight)
-        self.n0Box = QSpinBox()
-        self.n0Box.setRange(-1000, 1000)
+        n0Label = RightLabel("n0:")
+        self.n0Box = SpinBox()
+        self.n0Box.setRange()
         self.n0Box.setValue(-12)
         
-        n1Label = QLabel("n1:")
-        n1Label.setAlignment(Qt.AlignRight)
-        self.n1Box = QSpinBox()
-        self.n1Box.setRange(-1000, 1000)
+        n1Label = RightLabel("n1:")
+        self.n1Box = SpinBox()
+        self.n1Box.setRange()
         self.n1Box.setValue(12)
         
         self._valueChanged()
