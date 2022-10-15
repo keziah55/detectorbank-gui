@@ -7,7 +7,7 @@ Created on Sat Oct 15 17:27:07 2022
 """
 
 from qtpy.QtWidgets import QLineEdit, QGridLayout, QWidget, QLabel
-from qtpy.QtCore import Signal, QTimer
+from qtpy.QtCore import Signal, QTimer, Qt
 from qtpy.QtGui import QPalette, QColor
 import numpy as np
 import re
@@ -22,6 +22,7 @@ class NoteRangeInfo:
     
     def __post_init__(self):
         self.label = QLabel(self.name)
+        self.label.setAlignment(Qt.AlignRight)
         self.edit = QLineEdit()
         self.freqLabel = QLabel()
         palette = self.edit.palette()
@@ -80,6 +81,7 @@ class NoteRangePage(QWidget):
                 if isinstance(widget, QWidget):
                     layout.addWidget(widget, row, col)
                     col += 1
+        layout.setRowStretch(row+1, 10)
         self.setLayout(layout)
         
     @property
