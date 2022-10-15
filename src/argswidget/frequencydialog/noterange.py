@@ -6,10 +6,10 @@ Created on Sat Oct 15 17:27:07 2022
 @author: keziah
 """
 
-from qtpy.QtWidgets import QLineEdit, QGridLayout, QWidget, QLabel
+from qtpy.QtWidgets import QLineEdit, QWidget, QLabel
 from qtpy.QtCore import QTimer, Qt
 from qtpy.QtGui import QPalette, QColor
-from .abstractfrequencypage import AbstractFrequencyPage
+from .abstractpage import AbstractPage
 import numpy as np
 import re
 from dataclasses import dataclass
@@ -50,10 +50,10 @@ class NoteRangeInfo:
         return [self.label, self.edit, self.freqLabel]
     
 
-class NoteRangePage(AbstractFrequencyPage):
+class NoteRangePage(AbstractPage):
     
     def __init__(self, *args, defaultStart="A0", defaultEnd="C8", invalidColour="#ff0000", **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, name="frequencies", **kwargs)
         
         self.widgets = {"start":NoteRangeInfo("Start note:"),
                         "end":NoteRangeInfo("End note:")}

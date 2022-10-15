@@ -10,16 +10,16 @@ from qtpy.QtCore import Signal
 import numpy as np
 from abc import abstractmethod
 
-class AbstractFrequencyPage(QWidget):
+class AbstractPage(QWidget):
     valid = Signal(bool)
     
-    frequencies = Signal(object)
+    values = Signal(object)
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, name="", **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.doneButton = QPushButton("Set frequencies")
-        self.doneButton.clicked.connect(self._emitFrequencies)
+        self.doneButton = QPushButton(f"Set {name}")
+        self.doneButton.clicked.connect(self._emitValues)
         
         self.layout = QGridLayout()
         self.setLayout(self.layout)
@@ -36,5 +36,5 @@ class AbstractFrequencyPage(QWidget):
         """ Return numpy array of frequencies """
         pass
     
-    def _emitFrequencies(self):
-        self.frequencies.emit(self.value)
+    def _emitValues(self):
+        self.values.emit(self.value)
