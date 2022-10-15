@@ -16,7 +16,7 @@ from dataclasses import dataclass
 @dataclass
 class NoteRangeInfo:
     name: str
-    k: int = None
+    n: int = None
     valid: bool = True
     invalidColour: str = "#ff0000"
     
@@ -29,10 +29,10 @@ class NoteRangeInfo:
         invalidColour = QColor(self.invalidColour)
         self.palettes["invalid"].setColor(QPalette.Base, invalidColour)
     
-    def setK(self, k):
-        self.k = k
-        if k is not None:
-            self.freq = 440*2**(k/12)
+    def setN(self, n):
+        self.n = n
+        if n is not None:
+            self.freq = 440*2**(n/12)
             self.freqLabel.setText(f"{self.freq:g} Hz")
         else:
             self.freq = None
@@ -89,12 +89,12 @@ class NoteRangePage(QWidget):
         
     def _textChanged(self, which):
         text = self.widgets[which].edit.text()
-        if (k := self._validate(text)) is not False:
+        if (n := self._validate(text)) is not False:
             self.widgets[which].setValid(True)
-            self.widgets[which].setK(k)
+            self.widgets[which].setN(n)
         else:
             self.widgets[which].setValid(False)
-            self.widgets[which].setK(None)
+            self.widgets[which].setN(None)
             
         self.valid.emit(self.isValid)
         
@@ -116,18 +116,18 @@ class NoteRangePage(QWidget):
         octaveDiff = octave - 4
         notes = {"a":0, "b":2, "c":-9, "d":-7, "e":-5, "f":-4, "g":-2}
         
-        k = notes[note] + (octaveDiff * 12)
+        n = notes[note] + (octaveDiff * 12)
         if alter == "#":
-            k += 1
+            n += 1
         elif alter == "b":
-            k -= 1
+            n -= 1
             
-        return k
+        return n
     
     @property
     def value(self) -> np.ndarray:
         """ Return numpy array of frequencies """
-        k0, k1 = sorted([info.k for info in self.widgets.values()])
-        k1 += 1
-        f = np.array([440*2**k for k in range(k0, k1)])
+        n0, n1 = sorted([info.n for info in self.widgets.values()])
+        n1 += 1
+        f = np.array([440*2**(n/12) for n in range(n0, n1)])
         return f

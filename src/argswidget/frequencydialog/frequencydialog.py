@@ -4,19 +4,13 @@
 Dialog to edit detector frequencies and bandwidths
 """
 
-from qtpy.QtWidgets import (QDialog, QTableWidget, QLineEdit, QRadioButton, 
-                            QDialogButtonBox, QVBoxLayout, QHBoxLayout, 
-                            QGridLayout, QWidget, QLabel)
-from qtpy.QtCore import Signal, QTimer, QObject
-from qtpy.QtGui import QPalette, QColor
+from qtpy.QtWidgets import (QDialog, QTableWidget, QRadioButton, QVBoxLayout,  
+                            QDialogButtonBox, QWidget)
+from qtpy.QtCore import Signal, QObject
 from customQObjects.widgets import GroupBox, StackedWidget
 from .noterange import NoteRangePage
-import re
-from dataclasses import dataclass
+from .equationdialog import EquationPage
     
-class EquationPage(QWidget):
-    pass
-
 class ManualPage(QWidget):
     pass
 
