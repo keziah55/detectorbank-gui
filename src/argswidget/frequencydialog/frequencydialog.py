@@ -45,21 +45,26 @@ class FrequencyDialog(QDialog):
     def __init__(self, *args, defaultFreqs=[], defaultBws=[], **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.widgets = {
+        self.freqRangeWidgets = {
             "note_range":FrequencyInputSelector("note_range", NoteRangePage(), "Note range"), 
             "equation":FrequencyInputSelector("equation", EquationPage(), "Equation"), 
             "manual":FrequencyInputSelector("manual", ManualPage(), "Manual")}
         
         self.inputSelect = GroupBox("Frequency range input mode")
-        self.stack = StackedWidget()
+        self.freqRangeStack = StackedWidget()
         
-        for selector in self.widgets.values():
+        for selector in self.freqRangeWidgets.values():
             self.inputSelect.addWidget(selector.radioButton)
             selector.selected.connect(self._changePage)
-            self.stack.addWidget(selector.page, selector.name)
+            self.freqRangeStack.addWidget(selector.page, selector.name)
             
-        self.widgets["note_range"].setSelected()
-            
+        self.freqRangeWidgets["note_range"].setSelected()
+        
+        self.tableWidgets = {key:QTableWidget(0,2) for key in self.freqRangeWidgets}
+        for table in self.tableWidgets.values():
+            table.setHorizontalHeaderLabels(["Frequency", "Bandwidth"])
+        self.tableStack = StackedWidget(pages=self.tableWidgets)
+        
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
         
         self.okButton =  self.buttonBox.button(QDialogButtonBox.Ok)
@@ -69,11 +74,12 @@ class FrequencyDialog(QDialog):
         
         layout = QVBoxLayout()
         layout.addWidget(self.inputSelect)
-        layout.addWidget(self.stack)
+        layout.addWidget(self.freqRangeStack)
+        layout.addWidget(self.tableStack)
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
         
         self.setWindowTitle("Set frequencies and bandwidths")
         
     def _changePage(self, key, prettyName):
-        self.stack.setCurrentKey(key)
+        self.freqRangeStack.setCurrentKey(key)

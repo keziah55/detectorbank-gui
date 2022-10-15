@@ -6,11 +6,11 @@ Created on Sat Oct 15 18:04:03 2022
 @author: keziah
 """
 from qtpy.QtWidgets import QGridLayout, QWidget, QLabel, QSpinBox, QDoubleSpinBox
-from qtpy.QtCore import Signal, Qt
+from qtpy.QtCore import Qt
+from .abstractfrequencypage import AbstractFrequencyPage
 import numpy as np
 
-class EquationPage(QWidget):
-    valid = Signal(bool)
+class EquationPage(AbstractFrequencyPage):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -52,14 +52,12 @@ class EquationPage(QWidget):
         for box in [item[1] for item in widgets]:
             box.valueChanged.connect(self._valueChanged)
         
-        layout = QGridLayout()
-        layout.addWidget(self.equationLabel, 0, 0, 1, 2)
+        self.layout.addWidget(self.equationLabel, 0, 0, 1, 2)
         for row, ws in enumerate(widgets):
             for col, w in enumerate(ws):
-                layout.addWidget(w, row+1, col)
-        layout.setRowStretch(row+2, 10)
-        
-        self.setLayout(layout)
+                self.layout.addWidget(w, row+1, col)
+        self.layout.addWidget(self.doneButton, row+2, 0, 1, 2)
+        self.layout.setRowStretch(row+3, 10)
         
     def _getValues(self):
         freq = float(self.refFreqBox.value())

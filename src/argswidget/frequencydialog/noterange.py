@@ -7,8 +7,9 @@ Created on Sat Oct 15 17:27:07 2022
 """
 
 from qtpy.QtWidgets import QLineEdit, QGridLayout, QWidget, QLabel
-from qtpy.QtCore import Signal, QTimer, Qt
+from qtpy.QtCore import QTimer, Qt
 from qtpy.QtGui import QPalette, QColor
+from .abstractfrequencypage import AbstractFrequencyPage
 import numpy as np
 import re
 from dataclasses import dataclass
@@ -49,8 +50,7 @@ class NoteRangeInfo:
         return [self.label, self.edit, self.freqLabel]
     
 
-class NoteRangePage(QWidget):
-    valid = Signal(bool)
+class NoteRangePage(AbstractFrequencyPage):
     
     def __init__(self, *args, defaultStart="A0", defaultEnd="C8", invalidColour="#ff0000", **kwargs):
         super().__init__(*args, **kwargs)
@@ -74,15 +74,14 @@ class NoteRangePage(QWidget):
         self.widgets["start"].edit.setText(defaultStart)
         self.widgets["end"].edit.setText(defaultEnd)
         
-        layout = QGridLayout()
         for row, info in enumerate(self.widgets.values()):
             col = 0
             for widget in info.widgets:
                 if isinstance(widget, QWidget):
-                    layout.addWidget(widget, row, col)
+                    self.layout.addWidget(widget, row, col)
                     col += 1
-        layout.setRowStretch(row+1, 10)
-        self.setLayout(layout)
+        self.layout.addWidget(self.doneButton, row+1, 0, 1, 3)
+        self.layout.setRowStretch(row+2, 10)
         
     @property
     def isValid(self):
@@ -133,3 +132,4 @@ class NoteRangePage(QWidget):
         n1 += 1
         f = np.array([440*2**(n/12) for n in range(n0, n1)])
         return f
+    
