@@ -16,14 +16,14 @@ from dataclasses import dataclass
 @dataclass
 class NoteRangeInfo:
     name: str
-    edit: QLineEdit
-    freqLabel: QLabel
     k: int = None
     valid: bool = True
     invalidColour: str = "#ff0000"
     
     def __post_init__(self):
         self.label = QLabel(self.name)
+        self.edit = QLineEdit()
+        self.freqLabel = QLabel()
         palette = self.edit.palette()
         self.palettes = {"valid":QPalette(palette), "invalid":QPalette(palette)}
         invalidColour = QColor(self.invalidColour)
@@ -71,7 +71,7 @@ class NoteRangePage(QWidget):
         self.widgets["end"].edit.textChanged.connect(self.timers["end"].start)
         
         self.widgets["start"].edit.setText(defaultStart)
-        self.widgets["end"].setText(defaultEnd)
+        self.widgets["end"].edit.setText(defaultEnd)
         
         layout = QGridLayout()
         for row, info in enumerate(self.widgets.values()):
