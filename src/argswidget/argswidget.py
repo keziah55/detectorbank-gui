@@ -4,11 +4,10 @@
 Form to edit DetectorBank args
 """
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-                            QGridLayout, QScrollArea, QDialog)
+                            QGridLayout, QScrollArea, QDialog, QSizePolicy)
 from qtpy.QtCore import Qt
-from customQObjects.widgets import ElideLabel
-from .valuewidgets import (ValueLabel, ValueLineEdit, ValueComboBox, ValueSpinBox,
-                           ValueDoubleSpinBox)
+from customQObjects.widgets import ElideMixin
+from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
 from .frequencydialog import FrequencyDialog
 from .profiledialog import LoadDialog, SaveDialog
 from detectorbank import DetectorBank
@@ -43,6 +42,22 @@ class Parameter:
         
 Feature = namedtuple("Feature", ["name", "value"]) # used when making combobox of DB features
 
+class FreqBwButton(ElideMixin, QPushButton):
+    def __init__(self, *args, **kwargs):
+        super(). __init__(*args, **kwargs)
+        self._dialog = FrequencyDialog()
+        self.clicked.connect(self._showDialog)
+        
+    @property
+    def value(self):
+        return self._dialog.values
+    
+    def _showDialog(self):
+        reply = self._dialog.exec_()
+        if reply == QDialog.Accepted:
+            if self._dialog.valuuesStr is not None:
+                self.setText(self._dialog.valuuesStr)
+
 class ArgsWidget(QScrollArea):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -50,10 +65,11 @@ class ArgsWidget(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)
-
+    
 class _AbsZArgsWidget(QWidget):
     def __init__(self, parent=None, sr=None, profile=None, numThreads=None, freq=None, 
                  bw=None, method=None, freqNorm=None, ampNorm=None, damping=None, gain=None):
@@ -61,8 +77,8 @@ class _AbsZArgsWidget(QWidget):
         
         self.srWidget = ValueLabel(suffix=" Hz")
         self.threadsWidget = ValueSpinBox()
-        self.freqWidget = ElideLabel("Select frequencies and bandwidths")
-        self.bwWidget = ElideLabel("Select frequencies and bandwidths")
+        self.freqBwWidget = FreqBwButton()
+        self.freqBwWidget.setText("Select frequencies and bandwidths")
         self.dampingWidget = ValueDoubleSpinBox()
         self.gainWidget = ValueDoubleSpinBox()
         self.methodWidget = ValueComboBox(
@@ -75,10 +91,6 @@ class _AbsZArgsWidget(QWidget):
             values=[Feature("Unnormalized", DetectorBank.amp_unnormalized),
                     Feature("Normalized", DetectorBank.amp_normalized)])
         
-        self._freqBwDialog = FrequencyDialog()
-        
-        self.freqWidget.clicked.connect(self._showFreqBwDialog)
-        self.bwWidget.clicked.connect(self._showFreqBwDialog)
         self.dampingWidget.setSingleStep(0.0001)
         self.dampingWidget.setDecimals(5)
         
@@ -93,10 +105,8 @@ class _AbsZArgsWidget(QWidget):
                 "Passing a value of less than 1 causes the number of threads to "
                 "be set according to the number of reported CPU cores",
                 int), 
-            "freqs":Parameter(
-                "freqs", self.freqWidget, "Frequencies", "Frequencies to detect"),
-            "bws":Parameter(
-                "bws", self.bwWidget, "Bandwidths", "Bandwidth(s) of detectors"),
+            "detChars":Parameter(
+                "detChars", self.freqBwWidget, "Frequencies and bandwidths", "Detector characteristics"),
             "damping":Parameter(
                 "damping", self.dampingWidget, "Damping", 
                 "Damping factor for all detectors. Default is 0.0001. "
@@ -157,25 +167,28 @@ class _AbsZArgsWidget(QWidget):
     def _saveProfile(self, name):
         pass
     
-    def _showFreqBwDialog(self):
-        reply = self._freqBwDialog.exec_()
-        if reply == QDialog.Accepted:
-            print(self._freqBwDialog.value)
-        else:
-            print("cancelled")
-    
     def setParams(self, **kwargs):
         """ Set arg value in form """
         for name, value in kwargs.items():
             if (param := self.widgets.get(name, None)) is not None:
                 param.widget.setValue(value)
     
-    def getArgs(self) -> dict:
-        """ Return dict of DetectorBank args """
+    def getArgs(self) -> tuple[dict, list]:
+        """ Return dict of DetectorBank args and list of any invalid args.
+        
+            If any arg is None, it will be considered invalid.
+        """
         ret = {}
+        invalid = []
         for name, param in self.widgets.items():
-            ret[name] = param.value
-        return ret
+            try:
+                value = param.value
+            except ValueError:
+                value = None
+            ret[name] = value
+            if value is None:
+                invalid.append(param.prettyName)
+        return ret, invalid
     
     def _setDefaults(self):
         

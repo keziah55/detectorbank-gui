@@ -206,7 +206,7 @@ class FrequencyDialog(QDialog):
         return True
         
     @property
-    def value(self):
+    def values(self):
         if not self._validate():
             return None
         freqs = []
@@ -218,4 +218,12 @@ class FrequencyDialog(QDialog):
             if (item := self.table.item(row, 1)) is not None:
                 bws.append(float(item.text()))
         return np.array(freqs), np.array(bws)
+    
+    @property
+    def valuuesStr(self):
+        if (values := self.values) is not None:
+            freqs, bws = values
+            return f"{len(freqs)} values; ({freqs[0]:g}, {bws[0]:g})...({freqs[-1]:g}, {bws[-1]:g})"
+        else:
+            return None
                 

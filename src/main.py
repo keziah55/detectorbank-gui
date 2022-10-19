@@ -3,7 +3,7 @@
 """
 Main window
 """
-from qtpy.QtWidgets import QMainWindow, QDockWidget, QAction, QFileDialog
+from qtpy.QtWidgets import QMainWindow, QDockWidget, QAction, QFileDialog, QMessageBox
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from .audioplot import AudioPlotWidget
@@ -34,15 +34,12 @@ class DBGui(QMainWindow):
         
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
         
-        self.widgets = {"audioinput":('Audio Input', self.audioplot, 'left'),
-                        "args":('Parameters',self.argswidget, 'right')}
+        widgets = {"audioinput":('Audio Input', self.audioplot, 'left'),
+                   "args":('Parameters',self.argswidget, 'right')}
         
-        for key, values in self.widgets.items():
+        for key, values in widgets.items():
             name, widget, area = values
-            dockarea = self.dockAreas[area]
-            dockwidget = QDockWidget(name)
-            dockwidget.setWidget(widget)
-            self.addDockWidget(dockarea, dockwidget)
+            self.createDockWidget(widget, area, name, key)
             
         self._openAudioDir = os.getcwd()
         if audioFile is not None:
@@ -71,7 +68,12 @@ class DBGui(QMainWindow):
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
-        params = self.argswidget.getArgs()
+        params, invalid = self.argswidget.getArgs()
+        if len(invalid) > 0:
+            QMessageBox.warning(self, "Cannot run", 
+                                f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
+                                "Analysis cannot be carried out.")
+            return
         from pprint import pprint; pprint(params)
         
         # TODO get audio segments
@@ -94,6 +96,20 @@ class DBGui(QMainWindow):
     def _makeDetectorCharacteristics(self, freqs, bws):
         return np.array(list(zip(freqs, bws)))
             
+    def createDockWidget(self, widget, area, title, key=None):
+        if area in self.dockAreas:
+            area = self.dockAreas[area]
+        dock = QDockWidget()
+        dock.setWidget(widget)
+        dock.setWindowTitle(title)
+        dock.setObjectName(title)
+        self.addDockWidget(area, dock)
+        if not hasattr(self, "dockWidgets"):
+            self.dockWidgets = {}
+        if key is None:
+            key = title
+        self.dockWidgets[key] = dock
+    
     def createActions(self):
         self.openAudioFileAction = QAction("&Open audio file", self, shortcut=QKeySequence.Open)
         if (icon := QIcon.fromTheme("audio-x-generic")) is not None:

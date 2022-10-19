@@ -3,8 +3,8 @@
 """
 QWidgets with `setValue` method and `value` property.
 """
-from qtpy.QtWidgets import QLabel, QLineEdit, QSpinBox, QDoubleSpinBox
-from customQObjects.widgets import ComboBox, ElideLabel
+from qtpy.QtWidgets import QLabel, QSpinBox, QDoubleSpinBox
+from customQObjects.widgets import ComboBox
 
 class ValueLabel(QLabel):
     def __init__(self, *args, suffix="", **kwargs):
@@ -19,16 +19,7 @@ class ValueLabel(QLabel):
     def value(self):
         text = self.text()
         return text.removesuffix(self._suffix)
-        
-class ValueLineEdit(QLineEdit):
-    def setValue(self, value):
-        """ Set line edit text to `value` """
-        self.setText(f"{value}")
-        
-    @property
-    def value(self):
-        return self.text
-        
+                
 class ValueComboBox(ComboBox):
     def setValue(self, value, strict=True):
         """ Set combo box current text to `value` 

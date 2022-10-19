@@ -3,7 +3,7 @@
 """
 QScrollArea where :class:`SegmentWidgets` can be added or removed.
 """
-from qtpy.QtWidgets import QPushButton, QScrollArea
+from qtpy.QtWidgets import QPushButton, QScrollArea, QSizePolicy
 from qtpy.QtCore import Signal,  Qt, QSize
 from qtpy.QtGui import QIcon
 from customQObjects.widgets import GroupBox
@@ -16,6 +16,7 @@ class SegmentList(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)
