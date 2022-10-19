@@ -9,6 +9,7 @@ from qtpy.QtGui import QIcon, QKeySequence
 from .audioplot import AudioPlotWidget
 from .argswidget import ArgsWidget
 from .audioread import read_audio
+from .hopfplot import HopfPlot
 from detectorbank import DetectorBank
 import numpy as np
 import os
@@ -22,8 +23,8 @@ class DBGui(QMainWindow):
         super().__init__(*args, **kwargs)
         
         self.audioplot = AudioPlotWidget(self)
-
         self.argswidget = ArgsWidget(self)
+        self.hopfplot = HopfPlot(self)
 
         self.createActions()
         self.connectActions()
@@ -35,7 +36,8 @@ class DBGui(QMainWindow):
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
         
         widgets = {"audioinput":('Audio Input', self.audioplot, 'left'),
-                   "args":('Parameters',self.argswidget, 'right')}
+                   "args":('Parameters',self.argswidget, 'right'),
+                   "output":("Output", self.hopfplot, 'bottom')}
         
         for key, values in widgets.items():
             name, widget, area = values
@@ -74,21 +76,25 @@ class DBGui(QMainWindow):
                                 f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
                                 "Analysis cannot be carried out.")
             return
-        from pprint import pprint; pprint(params)
         
-        # TODO get audio segments
+        for n0, n1 in self.audioplot.getSegments():
+            det = self._makeDetectorBank(params, audioSlice=(n0,n1))
+            z = np.zeros((len(params['detChars'][0]), n1-n0), dtype=np.complex128)  
+            r = np.zeros(z.shape)
+            self._setStatus("Getting DetectorBank response")
+            det.getZ(z)
+            det.absZ(r, z)
+            self.hopfplot.addResponse(r)
         
-        det = self._makeDetectorBank(params)
-        z = np.zeros((len(params['freqs']), len(self.audio)), dtype=np.complex128)  
-        r = np.zeros(z.shape)
-        self._setStatus("Getting DetectorBank response")
-        det.getZ(z)
-        det.absZ(r, z)
-        
-    def _makeDetectorBank(self, params):
-        det_char = self._makeDetectorCharacteristics(params['freqs'], params['bws'])
+    def _makeDetectorBank(self, params, audioSlice=None):
+        det_char = self._makeDetectorCharacteristics(*params['detChars'])
         features = params['method'] | params['freqNorm'] | params['ampNorm']
-        args = (self.sr, self.audio, params['numThreads'], det_char, features,
+        if audioSlice is not None:
+            n0, n1 = audioSlice
+            audio = self.audio[n0:n1]
+        else:
+            audio = self.audio
+        args = (self.sr, audio, params['numThreads'], det_char, features,
                 params['damping'], params['gain'])
         det = DetectorBank(*args)
         return det
