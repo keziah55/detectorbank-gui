@@ -6,7 +6,7 @@ Created on Wed Oct 19 22:06:16 2022
 @author: keziah
 """
 from pyqtgraph import GraphicsLayoutWidget, PlotWidget, LinearRegionItem, InfiniteLine, mkColor
-from qtpy.QtWidgets import QScrollArea, QSizePolicy
+from qtpy.QtWidgets import QScrollArea, QSizePolicy, QWidget, QHBoxLayout
 from qtpy.QtCore import  Qt
 import numpy as np
 import itertools
@@ -14,12 +14,19 @@ import itertools
 class HopfPlot(QScrollArea):
     def __init__(self, parent, *args, sr=None, **kwargs):
         super().__init__()
-        self.widget = GraphicsLayoutWidget(parent=parent)
+        # self.widget = GraphicsLayoutWidget(parent=parent)
+        self.widget = _HopfPlot(parent, *args, sr=None, **kwargs)
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         
+    def __getattr__(self, name):
+        return getattr(self.widget, name)
+        
+class _HopfPlot(QWidget):
+    def __init__(self, parent, *args, sr=None, **kwargs):
+        super().__init__()
         self.sr = sr
         
         # from matplotlib.colours.CSS4_COLORS 
@@ -29,6 +36,9 @@ class HopfPlot(QScrollArea):
                         '#8B008B', '#C71585', '#008000', '#00FF00', '#2F4F4F',
                         '#778899', '#87CEEB', '#0000FF']
         self._plots = []
+        
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
         
     @property
     def sr(self):
@@ -56,13 +66,16 @@ class HopfPlot(QScrollArea):
         if segmentColour is not None:
             title = f'<span style="color:{segmentColour}">{title}</span>'
             
-        p = self.widget.addPlot(row=0, col=len(self._plots), title=title)
+        # p = self.widget.addPlot(row=0, col=len(self._plots), title=title)
+        p = PlotWidget(title=title)
+        self.layout.addWidget(p)
         self._plots.append(p)
             
         if self.sr is not None:
             t = np.linspace(s0/self.sr, s1/self.sr, size)
             p.setLabel('bottom', "Time", units="s")
         else:
+            # TODO downsampling
             t = np.arange(s0, s1)
             p.setLabel('bottom', "Samples")
         

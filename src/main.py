@@ -64,7 +64,7 @@ class DBGui(QMainWindow):
     def sr(self, value):
         self._sr = value
         self.argswidget.setParams(sr=value)
-        self.hopfplot.sr = value
+        self.hopfplot.setSampleRate(value)
         
     @property
     def running(self):
@@ -120,7 +120,7 @@ class DBGui(QMainWindow):
             
             n, idx = 0, 0
             
-            while n < self.cache.end():
+            while n < self.cache.end() and idx < result.shape[1]:
                 for k in range(channels):
                     result[k][idx] = self.cache[k,n]
                 idx += 1
