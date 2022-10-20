@@ -128,6 +128,8 @@ class DBGui(QMainWindow):
                 self._progressBar.setValue(self._progressBar.value()+1)
             
             self.hopfplot.addResponse(result, sampleRange=segment.samples, segmentColour=segment.colour)
+            
+        self._progressBar.setValue(numSamples)
         self.statusBar().clearMessage()
         
     def _makeDetectorCache(self, params, audioSlice=None):
