@@ -23,6 +23,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     
     window = DBGui(audioFile=args.input, profile=args.profile)
-    window.show()
+    # window.show()
     
     sys.exit(app.exec_())

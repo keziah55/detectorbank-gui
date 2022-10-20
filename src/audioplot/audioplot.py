@@ -14,15 +14,18 @@ import itertools
 from dataclasses import dataclass
 
 @dataclass
-class SegmentRange:
-    """ Class to store start and stop values of a segment. 
+class Segment:
+    """ Class to store start and stop values of a segment.
     
         By default these are stored as times; the equivalent sample values can 
         be accesssed via :meth:`samples`
+        
+        The segment's colour is also stored
     """
     start: float
     stop: float
     sr: int
+    colour: str = None
     
     @property
     def samples(self):
@@ -117,7 +120,7 @@ class AudioPlotWidget(QWidget):
         
     def getSegments(self) -> list[tuple]:
         """ Return list of start/stop samples """
-        return [segment.samples for segment in self.plotWidget.segments]
+        return self.plotWidget.segments #[segment.samples for segment in self.plotWidget.segments]
     
     def setCrosshairLabel(self, x, y):
         """ Set plot label text """
@@ -177,9 +180,9 @@ class AudioPlot(PlotWidget):
         self.plotItem.showGrid(True, True)
         
     @property
-    def segments(self) -> list[SegmentRange]:
+    def segments(self) -> list[Segment]:
         """ Return list of SegmentRanges """
-        return [SegmentRange(*segment.getRegion(), self.sr) for segment in self._segments]
+        return [Segment(*segment.getRegion(), self.sr, segment.brush.color().name()) for segment in self._segments]
     
     def setAudioData(self, data, sr):
         """ Plot `data`, with sample rate `sr`. """
