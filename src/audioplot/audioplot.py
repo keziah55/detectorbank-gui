@@ -26,6 +26,7 @@ class Segment:
     stop: float
     sr: int
     colour: str = None
+    idx: int = None
     
     @property
     def samples(self):
@@ -182,7 +183,10 @@ class AudioPlot(PlotWidget):
     @property
     def segments(self) -> list[Segment]:
         """ Return list of SegmentRanges """
-        return [Segment(*segment.getRegion(), self.sr, segment.brush.color().name()) for segment in self._segments]
+        segs = sorted(self._segments, key=lambda seg: seg.getRegion()[0])
+        segs = [Segment(*segment.getRegion(), self.sr, segment.brush.color().name(), idx=idx) 
+                for idx, segment in enumerate(segs)]
+        return segs
     
     def setAudioData(self, data, sr):
         """ Plot `data`, with sample rate `sr`. """

@@ -12,11 +12,12 @@ from .analyser import Analyser
 from .argswidget import ArgsWidget
 from .audioread import read_audio
 from .hopfplot import HopfPlot
-from detectorbank import DetectorBank, DetectorCache, Producer
-import numpy as np
+from .preferences import PreferencesDialog
 import os
 from functools import partial
-from collections import deque
+from collections import deque, namedtuple
+
+SegmentAnalysis = namedtuple("SegmentAnalysis", ["segement", "analyser"])
 
 class DBGui(QMainWindow):
     
@@ -29,6 +30,8 @@ class DBGui(QMainWindow):
         self.audioplot = AudioPlotWidget(self)
         self.argswidget = ArgsWidget(self)
         self.hopfplot = HopfPlot(self)
+        
+        self.prefDialog = PreferencesDialog(self)
 
         self._createActions()
         self._createToolBars()
@@ -51,12 +54,12 @@ class DBGui(QMainWindow):
             name, widget, area = values
             self.createDockWidget(widget, area, name, key)
             
+        self._currentAudioFile = None
         self._openAudioDir = os.getcwd()
         if audioFile is not None:
             self._openAudio(audioFile)
             
         self.downsample = 10
-        self.cacheSegDuration = 30 # cache segment size in ms
         
         self.showMaximized()
             
@@ -90,64 +93,59 @@ class DBGui(QMainWindow):
         """ Read audio file and set audio plot """
         try:
             self.audio, self.sr = read_audio(fname)
-    
-            self.audioplot.setAudio(self.audio, self.sr)
-            
-            self._openAudioDir = os.path.dirname(fname)
-            self._setTemporaryStatus(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
         except Exception as err:
             self._setTemporaryStatus(f"Cound not open {os.path.basename(fname)}")
+            self._currentAudioFile = None
+        else:
+            self.audioplot.setAudio(self.audio, self.sr)
+            self._openAudioDir = os.path.dirname(fname)
+            self._currentAudioFile = fname
+            self._setTemporaryStatus(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
         params, invalid = self.argswidget.getArgs()
-        if len(invalid) > 0:
+        if len(invalid) > 0 or self._currentAudioFile is None:
             QMessageBox.warning(self, "Cannot run", 
                                 f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
                                 "Analysis cannot be carried out.")
             return
         
-        self.analysers = []
+        self._setTemporaryStatus(f"Starting analysis of {self._currentAudioFile}")
+        
+        self.analysers = {}
         segments = self.audioplot.getSegments()
         numSamples = 0
         for segment in segments:
             n0, n1 = segment.samples
             numSamples += (n1-n0)
             
+            key = f"{n0}..{n1}"
             analyser = Analyser(self.audio, self.sr, params, n0, n1, self.downsample)
-            self.analysers.append(analyser)
+            sa = SegmentAnalysis(segment, analyser)
+            self.analysers[key] = sa
+            
             analyser.progress.connect(self._incrementProgress)
-            analyser.finished.connect(
-                partial(self.hopfplot.addResponse, sampleRange=segment.samples, segmentColour=segment.colour))
+            analyser.finished.connect(partial(self._analyserFinished, key=key))
+                # partial(self.hopfplot.addResponse, sampleRange=segment.samples, segmentColour=segment.colour))
             
         numSamples //= self.downsample
         self._progressBar.setMaximum(numSamples)
         self._progressQueue.clear()
         
-        # for i, segment in enumerate(segments):
-        #     n0, n1 = segment.samples
-        #     channels = self._makeDetectorCache(params, audioSlice=(n0,n1))
-        #     result = np.zeros((channels, (n1-n0)//self.downsample))
-            
-        #     self._setStatus(f"Getting DetectorBank response {i+1} of {len(segments)}")
-            
-        #     n, idx = 0, 0
-            
-        #     while n < self.cache.end() and idx < result.shape[1]:
-        #         for k in range(channels):
-        #             result[k][idx] = self.cache[k,n]
-        #         idx += 1
-        #         n += self.downsample
-        #         self._progressBar.setValue(self._progressBar.value()+1)
-            
-        #     self.hopfplot.addResponse(result, sampleRange=segment.samples, segmentColour=segment.colour)
-            
-        self._progressBar.setValue(numSamples)
-        self.statusBar().clearMessage()
+        for _, analyser in self.analysers.values():
+            analyser.start()
+        
+    def _analyserFinished(self, result, key):
+        segment, _ = self.analysers.pop(key)
+        self.hopfplot.addResponse(result, segment=segment)# sampleRange=segment.samples, segmentColour=segment.colour)
+        
+        if not self.analysers:
+            self._progressBar.setValue(self._progressBar.maximum())
         
     def _incrementProgress(self, inc):
         self._progressQueue.append(inc)
-        self.__checkProgressQueue()
+        self._checkProgressQueue()
         
     def _checkProgressQueue(self):
         while len(self._progressQueue) > 0:
@@ -190,7 +188,7 @@ class DBGui(QMainWindow):
         if (icon := QIcon.fromTheme("application-exit")) is not None:
             self.exitAction.setIcon(icon)
             
-        self.preferencesAct = QAction(
+        self.preferencesAction = QAction(
             "&Preferences", self, shortcut=QKeySequence.Preferences,
             statusTip="Edit preferences",
             triggered=self.prefDialog.show)
@@ -204,10 +202,10 @@ class DBGui(QMainWindow):
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.openAudioFileAction)
         self.fileMenu.addSeparator()
-        self.fileMenu.addAction(self.exitAct)
+        self.fileMenu.addAction(self.exitAction)
         
         self.editMenu = self.menuBar().addMenu("&Edit")
-        self.editMenu.addAction(self.preferencesAct)
+        self.editMenu.addAction(self.preferencesAction)
         
         self.analyseMenu = self.menuBar().addMenu("&Analysis")
         self.analyseMenu.addAction(self.analyseAction)

@@ -51,24 +51,37 @@ class _HopfPlot(QWidget):
     def setSampleRate(self, value):
         self.sr = value
         
-    def addResponse(self, data, sampleRange=None, segmentColour=None):
+    def addResponse(self, data, segment=None, sampleRange=None, titleColour=None, layoutIdx=None):
+        """ Plot `data`. 
         
+            If `segment` is given, `sampleRange`, `titleColour` and `layoutIdx`
+            will be retreived from attributes.
+            
+            If not giving `segment`, provide these values, where desired.
+        """
         chans, size = data.shape
+        
+        if segment is not None:
+            sampleRange = segment.samples
+            titleColour = segment.colour
+            layoutIdx = segment.idx
         
         if sampleRange is None:
             sampleRange = (0, size)
         s0, s1 = sampleRange
         
         if self.sr is not None:
-            title = f"{s0/self.sr:g}-{s1/self.sr:g} seconds"
+            title = f"{s0/self.sr:.4g}-{s1/self.sr:.4g} seconds"
         else:
             title = f"{s0}-{s1} samples"
-        if segmentColour is not None:
-            title = f'<span style="color:{segmentColour}">{title}</span>'
+        if titleColour is not None:
+            title = f'<span style="color:{titleColour}">{title}</span>'
             
-        # p = self.widget.addPlot(row=0, col=len(self._plots), title=title)
+        if layoutIdx is None:
+            layoutIdx = self.layout.count()
+            
         p = PlotWidget(title=title)
-        self.layout.addWidget(p)
+        self.layout.insertWidget(layoutIdx, p)
         self._plots.append(p)
             
         if self.sr is not None:
