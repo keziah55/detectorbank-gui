@@ -30,9 +30,9 @@ class DBGui(QMainWindow):
         self.argswidget = ArgsWidget(self)
         self.hopfplot = HopfPlot(self)
 
-        self.createActions()
-        self.connectActions()
-        self.createToolBars()
+        self._createActions()
+        self._createToolBars()
+        self._createMenus()
         
         self.statusBar()
         self._statusTimeout = 1500
@@ -168,30 +168,49 @@ class DBGui(QMainWindow):
             key = title
         self.dockWidgets[key] = dock
     
-    def createActions(self):
-        self.openAudioFileAction = QAction("&Open audio file", self, shortcut=QKeySequence.Open,
-                                           statusTip="Select audio file")
+    def _createActions(self):
+        self.openAudioFileAction = QAction(
+            "&Open audio file", self, shortcut=QKeySequence.Open, 
+            statusTip="Select audio file",
+            triggered=self._openAudioFile)
         if (icon := QIcon.fromTheme("audio-x-generic")) is not None:
             self.openAudioFileAction.setIcon(icon)
             
-        self.analyseAction = QAction("&Analyse audio file", self, shortcut="F5",
-                                     statusTip="Perform frequency analysis of audio")
+        self.analyseAction = QAction(
+            "&Analyse audio file", self, shortcut="F5",
+            statusTip="Perform frequency analysis of audio",
+            triggered = self._doAnalysis)
         if (icon := QIcon.fromTheme("system-run")) is not None:
             self.analyseAction.setIcon(icon)
             
-        self.exitAction = QAction("&Quit", self, shortcut=QKeySequence.Quit,
-                                  statusTip="Quit application")
+        self.exitAction = QAction(
+            "&Quit", self, shortcut=QKeySequence.Quit,
+            statusTip="Quit application",
+            triggered=self.close)
         if (icon := QIcon.fromTheme("application-exit")) is not None:
             self.exitAction.setIcon(icon)
+            
+        self.preferencesAct = QAction(
+            "&Preferences", self, shortcut=QKeySequence.Preferences,
+            statusTip="Edit preferences",
+            triggered=self.prefDialog.show)
         
-    def connectActions(self):
-        self.openAudioFileAction.triggered.connect(self._openAudioFile)
-        self.analyseAction.triggered.connect(self._doAnalysis)
-    
-    def createToolBars(self):
+    def _createToolBars(self):
         self.runToolBar = self.addToolBar("Run")
         self.runToolBar.addAction(self.openAudioFileAction)
         self.runToolBar.addAction(self.analyseAction)
+        
+    def _createMenus(self):
+        self.fileMenu = self.menuBar().addMenu("&File")
+        self.fileMenu.addAction(self.openAudioFileAction)
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.exitAct)
+        
+        self.editMenu = self.menuBar().addMenu("&Edit")
+        self.editMenu.addAction(self.preferencesAct)
+        
+        self.analyseMenu = self.menuBar().addMenu("&Analysis")
+        self.analyseMenu.addAction(self.analyseAction)
         
     def _setTemporaryStatus(self, msg):
         self.statusBar().showMessage(msg, self._statusTimeout)
