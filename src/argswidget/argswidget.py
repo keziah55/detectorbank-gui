@@ -55,8 +55,8 @@ class FreqBwButton(ElideMixin, QPushButton):
     def _showDialog(self):
         reply = self._dialog.exec_()
         if reply == QDialog.Accepted:
-            if self._dialog.valuuesStr is not None:
-                self.setText(self._dialog.valuuesStr)
+            if self._dialog.valuesStr is not None:
+                self.setText(self._dialog.valuesStr)
 
 class ArgsWidget(QScrollArea):
     def __init__(self, *args, **kwargs):

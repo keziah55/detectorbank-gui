@@ -8,12 +8,15 @@ from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QFileDialog,
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from .audioplot import AudioPlotWidget
+from .analyser import Analyser
 from .argswidget import ArgsWidget
 from .audioread import read_audio
 from .hopfplot import HopfPlot
 from detectorbank import DetectorBank, DetectorCache, Producer
 import numpy as np
 import os
+from functools import partial
+from collections import deque
 
 class DBGui(QMainWindow):
     
@@ -36,6 +39,7 @@ class DBGui(QMainWindow):
         
         self._progressBar = QProgressBar()
         self.statusBar().addPermanentWidget(self._progressBar)
+        self._progressQueue = deque()
         
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
         
@@ -103,60 +107,53 @@ class DBGui(QMainWindow):
                                 "Analysis cannot be carried out.")
             return
         
+        self.analysers = []
         segments = self.audioplot.getSegments()
         numSamples = 0
         for segment in segments:
             n0, n1 = segment.samples
             numSamples += (n1-n0)
+            
+            analyser = Analyser(self.audio, self.sr, params, n0, n1, self.downsample)
+            self.analysers.append(analyser)
+            analyser.progress.connect(self._incrementProgress)
+            analyser.finished.connect(
+                partial(self.hopfplot.addResponse, sampleRange=segment.samples, segmentColour=segment.colour))
+            
         numSamples //= self.downsample
         self._progressBar.setMaximum(numSamples)
+        self._progressQueue.clear()
         
-        for i, segment in enumerate(segments):
-            n0, n1 = segment.samples
-            channels = self._makeDetectorCache(params, audioSlice=(n0,n1))
-            result = np.zeros((channels, (n1-n0)//self.downsample))
+        # for i, segment in enumerate(segments):
+        #     n0, n1 = segment.samples
+        #     channels = self._makeDetectorCache(params, audioSlice=(n0,n1))
+        #     result = np.zeros((channels, (n1-n0)//self.downsample))
             
-            self._setStatus(f"Getting DetectorBank response {i+1} of {len(segments)}")
+        #     self._setStatus(f"Getting DetectorBank response {i+1} of {len(segments)}")
             
-            n, idx = 0, 0
+        #     n, idx = 0, 0
             
-            while n < self.cache.end() and idx < result.shape[1]:
-                for k in range(channels):
-                    result[k][idx] = self.cache[k,n]
-                idx += 1
-                n += self.downsample
-                self._progressBar.setValue(self._progressBar.value()+1)
+        #     while n < self.cache.end() and idx < result.shape[1]:
+        #         for k in range(channels):
+        #             result[k][idx] = self.cache[k,n]
+        #         idx += 1
+        #         n += self.downsample
+        #         self._progressBar.setValue(self._progressBar.value()+1)
             
-            self.hopfplot.addResponse(result, sampleRange=segment.samples, segmentColour=segment.colour)
+        #     self.hopfplot.addResponse(result, sampleRange=segment.samples, segmentColour=segment.colour)
             
         self._progressBar.setValue(numSamples)
         self.statusBar().clearMessage()
         
-    def _makeDetectorCache(self, params, audioSlice=None):
-        det_char = self._makeDetectorCharacteristics(*params['detChars'])
-        features = params['method'] | params['freqNorm'] | params['ampNorm']
-        if audioSlice is not None:
-            n0, n1 = audioSlice
-            if n0 < 0:
-                n0 = 0
-            if n1 > len(self.audio):
-                n1 = len(self.audio)
-            audio = self.audio[n0:n1]
-        else:
-            audio = self.audio
-        args = (self.sr, audio, params['numThreads'], det_char, features,
-                params['damping'], params['gain'])
-        self.det = DetectorBank(*args)
-        self.p = Producer(self.det)
-        segSize = self.cacheSegDuration * self.sr
-        numSegs = 10
-        self.cache = DetectorCache(self.p, numSegs, segSize)
-        channels = self.det.getChans()
-        return channels
+    def _incrementProgress(self, inc):
+        self._progressQueue.append(inc)
+        self.__checkProgressQueue()
         
-    def _makeDetectorCharacteristics(self, freqs, bws):
-        return np.array(list(zip(freqs, bws)))
-            
+    def _checkProgressQueue(self):
+        while len(self._progressQueue) > 0:
+            inc = self._progressQueue.popleft()
+            self._progressBar.setValue(self._progressBar.value()+inc)
+        
     def createDockWidget(self, widget, area, title, key=None):
         if area in self.dockAreas:
             area = self.dockAreas[area]
@@ -172,13 +169,20 @@ class DBGui(QMainWindow):
         self.dockWidgets[key] = dock
     
     def createActions(self):
-        self.openAudioFileAction = QAction("&Open audio file", self, shortcut=QKeySequence.Open)
+        self.openAudioFileAction = QAction("&Open audio file", self, shortcut=QKeySequence.Open,
+                                           statusTip="Select audio file")
         if (icon := QIcon.fromTheme("audio-x-generic")) is not None:
             self.openAudioFileAction.setIcon(icon)
             
-        self.analyseAction = QAction("&Analyse audio file", self, shortcut="F5")
+        self.analyseAction = QAction("&Analyse audio file", self, shortcut="F5",
+                                     statusTip="Perform frequency analysis of audio")
         if (icon := QIcon.fromTheme("system-run")) is not None:
             self.analyseAction.setIcon(icon)
+            
+        self.exitAction = QAction("&Quit", self, shortcut=QKeySequence.Quit,
+                                  statusTip="Quit application")
+        if (icon := QIcon.fromTheme("application-exit")) is not None:
+            self.exitAction.setIcon(icon)
         
     def connectActions(self):
         self.openAudioFileAction.triggered.connect(self._openAudioFile)

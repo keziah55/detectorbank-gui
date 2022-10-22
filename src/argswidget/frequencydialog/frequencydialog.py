@@ -220,7 +220,7 @@ class FrequencyDialog(QDialog):
         return np.array(freqs), np.array(bws)
     
     @property
-    def valuuesStr(self):
+    def valuesStr(self):
         if (values := self.values) is not None:
             freqs, bws = values
             return f"{len(freqs)} values; ({freqs[0]:g}, {bws[0]:g})...({freqs[-1]:g}, {bws[-1]:g})"

@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Oct 22 12:39:52 2022
+
+@author: keziah
+"""
+from qtpy.QtCore import QThread, QObject, Signal
+from detectorbank import DetectorBank, DetectorCache, Producer
+import numpy as np
+
+class AnalysisWorker(QObject):
+    
+    progress = Signal(int)
+    
+    finished = Signal()
+    
+    def __init__(self, cache, channels, resultSize, downsample=1, progressIncrement=10):
+        super().__init__()
+        self.cache = cache
+        self.channels = channels
+        self.resultSize = resultSize
+        self.downsample = downsample
+        self.progressIncrement = progressIncrement
+        self.result = np.zeros((self.channels, self.resultSize))
+        
+    def process(self):
+        
+        n, idx = 0, 0
+        
+        while n < self.cache.end() and idx < self.result.shape[1]:
+            for k in range(self.channels):
+                self.result[k][idx] = self.cache[k,n]
+            idx += 1
+            n += self.downsample
+            if n % self.progressIncrement == 0:
+                self.progress.emit(self.progressIncrement)
+            
+        self.finished.emit()
+        
+class Analyser(QObject):
+    
+    progress = Signal(int)
+    
+    finished = Signal(object)
+    
+    def __init__(self, audio, sr, params, n0=None, n1=None, downsample=1):
+        super().__init__()
+        
+        self.audio = audio
+        self.sr = sr
+        n0 = n0 if n0 is not None else 0
+        n1 = n1 if n1 is not None else len(audio)
+        
+        channels = self._makeDetectorCache(params, audioSlice=(n0, n1))
+        
+        self.worker = AnalysisWorker(self.cache, channels, (n1-n0)//downsample)
+        self.thread = QThread()
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.process)
+        self.worker.finished(self.thread.quit)
+        self.thread.finished.connect(self._emitResult)
+        self.worker.progress.connect(self.progress)
+        
+    def _makeDetectorCache(self, params, audioSlice=None):
+        det_char = np.column_stack(params['detChars'])
+        features = params['method'] | params['freqNorm'] | params['ampNorm']
+        if audioSlice is not None:
+            n0, n1 = audioSlice
+            if n0 < 0:
+                n0 = 0
+            if n1 > len(self.audio):
+                n1 = len(self.audio)
+            audio = self.audio[n0:n1]
+        else:
+            audio = self.audio
+        args = (self.sr, audio, params['numThreads'], det_char, features,
+                params['damping'], params['gain'])
+        self.det = DetectorBank(*args)
+        self.p = Producer(self.det)
+        segSize = self.cacheSegDuration * self.sr
+        numSegs = 10
+        self.cache = DetectorCache(self.p, numSegs, segSize)
+        channels = self.det.getChans()
+        return channels
+        
+    def _emitResult(self):
+        self.finished.emit(self.worker.result)
+        
