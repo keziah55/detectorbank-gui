@@ -42,6 +42,7 @@ class freqRangeSelector(QObject):
             self.selected.emit(self.name, self.prettyName)
         
 class FrequencyDialog(QDialog):
+    
     def __init__(self, *args, defaultFreqs=[], defaultBws=[], **kwargs):
         super().__init__(*args, **kwargs)
         
@@ -162,8 +163,11 @@ class FrequencyDialog(QDialog):
         self._valueChanged()
             
     def _setTableBandwidths(self, bw):
-        for row in range( self.table.rowCount()):
-            item = QTableWidgetItem(f"{bw:g}")
+        """ Set bandwidth value in table. `bw` can be scalar or array """
+        if not hasattr(bw, "__len__"):
+            bw = [bw] * self.table.rowCount()
+        for row in range(self.table.rowCount()):
+            item = QTableWidgetItem(f"{bw[row]:g}")
             item.setFlags(self._readOnlyFlags)
             self.table.setItem(row, 1, item)
         self._valueChanged()
@@ -217,13 +221,19 @@ class FrequencyDialog(QDialog):
                 freqs.append(float(item.text()))
             if (item := self.table.item(row, 1)) is not None:
                 bws.append(float(item.text()))
-        return np.array(freqs), np.array(bws)
+        return np.column_stack((np.array(freqs), np.array(bws)))
     
     @property
     def valuesStr(self):
         if (values := self.values) is not None:
-            freqs, bws = values
+            freqs, bws = values[:,0], values[:,1]
             return f"{len(freqs)} values; ({freqs[0]:g}, {bws[0]:g})...({freqs[-1]:g}, {bws[-1]:g})"
         else:
             return None
                 
+    def setValues(self, detChars):
+        """ Fill in manual frequencies and bandwidths """
+        for w in [self.freqRangeWidgets, self.bwWidgets]:
+            w["manual"].setSelected()
+        self._setTableFrequencies(detChars[:,0])
+        self._setTableBandwidths(detChars[:,1])

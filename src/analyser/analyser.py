@@ -35,7 +35,7 @@ class AnalysisWorker(QObject):
         self.result = np.zeros((self.channels, (n1-n0)//downsample))
         
     def _makeDetectorCache(self, params, audioSlice=None):
-        det_char = np.column_stack(params['detChars'])
+        det_char = params['detChars']
         features = params['method'] | params['freqNorm'] | params['ampNorm']
         if audioSlice is not None:
             n0, n1 = audioSlice

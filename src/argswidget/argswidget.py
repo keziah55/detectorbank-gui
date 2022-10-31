@@ -5,15 +5,17 @@ Form to edit DetectorBank args
 """
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
                             QGridLayout, QScrollArea, QDialog, QSizePolicy)
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Slot, Signal
 from customQObjects.widgets import ElideMixin
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
 from .frequencydialog import FrequencyDialog
 from .profiledialog import LoadDialog, SaveDialog
 from detectorbank import DetectorBank
 import os
+import numpy as np
 from dataclasses import dataclass
 from collections import namedtuple
+from bs4 import BeautifulSoup
 
 @dataclass
 class Parameter:
@@ -43,6 +45,9 @@ class Parameter:
 Feature = namedtuple("Feature", ["name", "value"]) # used when making combobox of DB features
 
 class FreqBwButton(ElideMixin, QPushButton):
+    
+    valueChanged = Signal()
+    
     def __init__(self, *args, **kwargs):
         super(). __init__(*args, **kwargs)
         self._dialog = FrequencyDialog()
@@ -52,11 +57,34 @@ class FreqBwButton(ElideMixin, QPushButton):
     def value(self):
         return self._dialog.values
     
+    def setValue(self, detChars):
+        self._dialog.setValues(detChars)
+        self.setText(self._dialog.valuesStr)
+    
     def _showDialog(self):
         reply = self._dialog.exec_()
         if reply == QDialog.Accepted:
             if self._dialog.valuesStr is not None:
                 self.setText(self._dialog.valuesStr)
+                self.valueChanged.emit()
+                
+class ProfileLabel(QLabel):
+    def __init__(self, *args, name=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setName(name)
+        
+    def setName(self, name):
+        if name is None:
+            name = ""
+        self._name = name
+        self.setText(f"Profile: {name}")
+        self.setToolTip(f"Current profile: {name}")
+        
+    def profileAltered(self):
+        if self._name:
+            text = f"Profile: <i>{self._name}</i>"
+            self.setText(text)
+            self.setToolTip("Profile altered by user")
 
 class ArgsWidget(QScrollArea):
     def __init__(self, *args, **kwargs):
@@ -101,7 +129,7 @@ class _AbsZArgsWidget(QWidget):
                 "sr", self.srWidget, "Sample rate", "Sample rate of audio file", float), 
             "numThreads":Parameter(
                 "numThreads", self.threadsWidget, "Threads", 
-                "Number of threads to execute concurrently to determine the detector outputs. "
+                "Maximum number of threads to execute concurrently to determine the detector outputs. "
                 "Passing a value of less than 1 causes the number of threads to "
                 "be set according to the number of reported CPU cores",
                 int), 
@@ -126,20 +154,26 @@ class _AbsZArgsWidget(QWidget):
         for row, param in enumerate(self.widgets.values()):
             form.addWidget(param.label, row, 0)
             form.addWidget(param.widget, row, 1)
+            param.widget.valueChanged.connect(self._valueChanged)
         form.setRowStretch(row+1, 10)
         
         self.restoreDefaultsButton = QPushButton("Restore defaults")
         self.loadProfileButton = QPushButton("Load profile")
         self.saveProfileButton = QPushButton("Save profile")
+        self.currentProfileLabel = ProfileLabel()
+        
+        self._ignoreValueChanged = False
+        self._profile = None
+        self.loadProfileButton.clicked.connect(self.loadProfile)
         
         self.restoreDefaultsButton.clicked.connect(self._setDefaults)
         
-        buttonLayout = QHBoxLayout()
-        for button in [self.loadProfileButton, self.saveProfileButton]:
-            buttonLayout.addWidget(button)
+        profileLayout = QHBoxLayout()
+        for button in [self.loadProfileButton, self.saveProfileButton, self.currentProfileLabel]:
+            profileLayout.addWidget(button)
             
         layout = QVBoxLayout()
-        layout.addLayout(buttonLayout)
+        layout.addLayout(profileLayout)
         layout.addLayout(form)
         layout.addWidget(self.restoreDefaultsButton)
             
@@ -147,22 +181,84 @@ class _AbsZArgsWidget(QWidget):
         
         self._setDefaults()
         
+    @property
+    def currentProfile(self):
+        return self._profile
+    
+    @currentProfile.setter
+    def currentProfile(self, name):
+        self._profile = name
+        if name is not None:
+            self.currentProfileLabel.setName(name)
+        else:
+            self.currentProfileLabel.profileAltered()
         
-    # TODO load and save from profile
+    @Slot()
+    def _valueChanged(self):
+        if not self._ignoreValueChanged:
+            self.currentProfileLabel.profileAltered()
+        
+    # TODO save from profile
     def loadProfile(self):
-        dialog = LoadDialog()
+        dialog = LoadDialog(parent=self, currentProfile=self._profile)
         reply = dialog.exec_()
-        if reply == QDialog.Accecpted:
+        if reply == QDialog.Accepted:
             self._loadProfile(dialog.getProfileName())
     
     def saveProfile(self):
-        dialog = SaveDialog()
+        dialog = SaveDialog(parent=self)
         reply = dialog.exec_()
-        if reply == QDialog.Accecpted:
+        if reply == QDialog.Accepted:
             self._saveProfile(dialog.getProfileName())
     
     def _loadProfile(self, profile):
-        pass
+        self.currentProfile = profile
+        with open(os.path.expanduser("~/.config/hopfskipjump.xml")) as fileobj:
+            soup = BeautifulSoup(fileobj, "xml")
+        p = soup.find("profile", attrs={'name':profile})
+        
+        method, freqNorm, ampNorm = self._parseFeatures(p)
+        detChars = self._parseFreqsBws(p)
+        params = {"sr":self._getNumberFromProfile(p, "sr"),
+                  "damping":self._getNumberFromProfile(p, "d"),
+                  "gain":self._getNumberFromProfile(p, "gain"),
+                  "numThreads":self._getNumberFromProfile(p, "maxThreads", int),
+                  "method":method,
+                  "freqNorm":freqNorm,
+                  "ampNorm":ampNorm,
+                  "detChars":detChars}
+        self._ignoreValueChanged = True
+        self.setParams(**params)
+        self._ignoreValueChanged = False
+        
+    @staticmethod
+    def _getNumberFromProfile(profile, name, numType=float):
+        return numType(profile.find(name).text)
+        
+    @staticmethod
+    def _parseFeatures(profile):
+        """ Return text of method, frequency normalisation and amplitude normalisation to be sent to combobox """
+        d = {"Runge-Kutta method":"Fourth order Runge-Kutta",
+             "Central difference method":"Central difference",
+             "Frequency unnormalized":"Unnormalized",
+             "Search-normalized":"Search normalized",
+             "Amplitude unnormalized":"Unnormalized",
+             "Amplitude normalized":"Normalized"}
+        featuresStr = profile.find("featureSet").text
+        features = [d.get(feature, feature) for feature in featuresStr.split(',')]
+        return features
+    
+    @staticmethod
+    def _parseFreqsBws(profile):
+        """ Given profile tag, return list of frequencies and list of bandwidths """
+        size = int(profile.find("numDetectors").text)
+        freqs = np.zeros(size)
+        bws = np.zeros(size)
+        detectors = profile.find_all("Detector")
+        for n, detector in enumerate(detectors):
+            freqs[n] = float(detector.w_in.text) / (2*np.pi)
+            bws[n] = float(detector.bw.text)
+        return np.column_stack((freqs, bws))
     
     def _saveProfile(self, name):
         pass

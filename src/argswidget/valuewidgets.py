@@ -4,9 +4,12 @@
 QWidgets with `setValue` method and `value` property.
 """
 from qtpy.QtWidgets import QLabel, QSpinBox, QDoubleSpinBox
+from qtpy.QtCore import Signal
 from customQObjects.widgets import ComboBox
 
 class ValueLabel(QLabel):
+    valueChanged = Signal()
+    
     def __init__(self, *args, suffix="", **kwargs):
         super().__init__(*args, **kwargs)
         self._suffix = suffix
@@ -14,6 +17,7 @@ class ValueLabel(QLabel):
     def setValue(self, value):
         """ Set label text to `value` """
         self.setText(f"{value}{self._suffix}")
+        self.valueChanged.emit()
         
     @property
     def value(self):
@@ -21,6 +25,13 @@ class ValueLabel(QLabel):
         return text.removesuffix(self._suffix)
                 
 class ValueComboBox(ComboBox):
+    valueChanged = Signal()
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.currentIndexChanged.connect(self.valueChanged)
+        self.currentTextChanged.connect(self.valueChanged)
+        
     def setValue(self, value, strict=True):
         """ Set combo box current text to `value` 
         
