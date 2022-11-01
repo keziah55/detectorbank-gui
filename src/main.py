@@ -53,7 +53,7 @@ class DBGui(QMainWindow):
         for key, values in widgets.items():
             name, widget, area = values
             self.createDockWidget(widget, area, name, key)
-            
+        
         self._currentAudioFile = None
         self._openAudioDir = os.getcwd()
         if audioFile is not None:
@@ -62,7 +62,7 @@ class DBGui(QMainWindow):
         self.downsample = 10
         
         self.showMaximized()
-            
+
     @property
     def sr(self):
         return self._sr

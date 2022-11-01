@@ -5,7 +5,7 @@ Created on Wed Oct 19 22:06:16 2022
 
 @author: keziah
 """
-from pyqtgraph import GraphicsLayoutWidget, PlotWidget, LinearRegionItem, InfiniteLine, mkColor
+from pyqtgraph import PlotWidget
 from qtpy.QtWidgets import QScrollArea, QSizePolicy, QWidget, QHBoxLayout
 from qtpy.QtCore import  Qt
 import numpy as np

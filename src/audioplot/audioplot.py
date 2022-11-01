@@ -184,6 +184,7 @@ class AudioPlot(PlotWidget):
     def segments(self) -> list[Segment]:
         """ Return list of SegmentRanges """
         segs = sorted(self._segments, key=lambda seg: seg.getRegion()[0])
+        print([seg.getRegion()[0] for seg in segs])
         segs = [Segment(*segment.getRegion(), self.sr, segment.brush.color().name(), idx=idx) 
                 for idx, segment in enumerate(segs)]
         return segs
