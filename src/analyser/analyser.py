@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Oct 22 12:39:52 2022
-
-@author: keziah
+Get absZ results from DetectorBank (in new thread)
 """
 from qtpy.QtCore import QThread, QObject, Signal
 from detectorbank import DetectorBank, DetectorCache, Producer

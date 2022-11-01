@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 19 22:06:16 2022
-
-@author: keziah
+Display multiple output plots
 """
 from pyqtgraph import PlotWidget
 from qtpy.QtWidgets import QScrollArea, QSizePolicy, QWidget, QHBoxLayout
@@ -59,6 +57,7 @@ class _HopfPlot(QWidget):
             
             If not giving `segment`, provide these values, where desired.
         """
+        # TODO make all plots before starting analysis, then add data when it's ready?
         chans, size = data.shape
         
         if segment is not None:

@@ -3,8 +3,8 @@
 """
 Form to edit DetectorBank args
 """
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-                            QGridLayout, QScrollArea, QDialog, QSizePolicy, QMessageBox)
+from qtpy.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, QDialog, 
+                            QGridLayout, QScrollArea, QSizePolicy, QMessageBox)
 from qtpy.QtCore import Qt, Slot, Signal
 from customQObjects.widgets import ElideMixin, GroupBox
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
