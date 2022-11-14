@@ -3,9 +3,9 @@
 """
 Widget managing two spin boxes, to set the start and stop points of a segment.
 """
-from qtpy.QtWidgets import QHBoxLayout, QWidget, QDoubleSpinBox
+from qtpy.QtWidgets import QHBoxLayout, QWidget, QDoubleSpinBox, QPushButton
 from qtpy.QtCore import Signal, Slot
-from qtpy.QtGui import QPalette
+from qtpy.QtGui import QPalette, QIcon
 
 class SegmentWidget(QWidget):
     """ Widget managing two spin boxes, to set the start and stop points of a segment.
@@ -29,9 +29,21 @@ class SegmentWidget(QWidget):
     startValueChanged = Signal(float)
     stopValueChanged = Signal(float)
     
+    requestPlaySegment = Signal(object)
+    """ **signal** requestPlaySegment(SegmentWidget `self`) 
+    
+        Emitted when user requests segment be played, with the reference to this segment.
+    """
+    
+    requestStopSegment = Signal()
+    
     def __init__(self, start=None, stop=None, minimum=None, maximum=None, colour=None):
         super().__init__()
         
+        # if (icon := QIcon.fromTheme('media-playback-start')) is not None:
+        #     self.playButton = QPushButton(icon, "")
+        # else:
+        self.playButton = QPushButton()
         self.startbox = QDoubleSpinBox()
         self.stopbox = QDoubleSpinBox()
         
@@ -56,10 +68,13 @@ class SegmentWidget(QWidget):
             
         self.startbox.valueChanged.connect(self._startChanged)
         self.stopbox.valueChanged.connect(self._stopChanged)
+        self.playButton.clicked.connect(lambda *args: self.playStopSegment(emit=True))
+        
+        self.playing = False
         
         layout = QHBoxLayout()
-        for spinbox in self.boxes:
-            layout.addWidget(spinbox)
+        for widget in [self.playButton] + self.boxes:
+            layout.addWidget(widget)
             
         self.setLayout(layout)
         
@@ -67,6 +82,10 @@ class SegmentWidget(QWidget):
     def boxes(self):
         """ Return both spinboxes managed by this widget """
         return [self.startbox, self.stopbox]
+    
+    @property
+    def values(self):
+        return [box.value() for box in self.boxes]
     
     def setMinimum(self, minimum):
         """ Set minimum value of both spinboxes """
@@ -107,5 +126,39 @@ class SegmentWidget(QWidget):
             self.startbox.setValue(value)
             self.startValueChanged.emit(value)
         self.stopValueChanged.emit(value)
+        
+    @property
+    def playing(self):
+        """ Return True if audio is playing """
+        return self._playing 
+    
+    @playing.setter
+    def playing(self, isPlaying):
+        self._playing = isPlaying
+        if self._playing is False:
+            if (icon := QIcon.fromTheme('media-playback-start')) is not None:
+                self.playButton.setIcon(icon)
+            else:
+                self.playButton.setText("Play")
+        else:
+            if (icon := QIcon.fromTheme('media-playback-stop')) is not None:
+                self.playButton.setIcon(icon)
+            else:
+                self.playButton.setText("Stop")
+        
+    def playStopSegment(self, play=None, emit=False):
+        """ Emit :attr:`requestPlaySegment`. """
+        if play is None:
+            self.playing = not self.playing
+        elif self.playing == play: # nothing to be done
+            return None
+        else:
+            self.playing = play
+        print(f"\n{self.values} playStopSegment {self.playing}")
+        if emit:
+            if self.playing:
+                self.requestPlaySegment.emit(self)
+            else:
+                self.requestStopSegment.emit()
         
         

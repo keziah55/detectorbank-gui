@@ -10,3 +10,4 @@
 - [pyqt5](https://www.riverbankcomputing.com/software/pyqt/) or [pyside2](https://wiki.qt.io/Qt_for_Python)
 - [customQObjects](https://github.com/keziah55/CustomPyQtObjects)
 - [BeautifulSoup](https://pypi.org/project/beautifulsoup4/)
+- [sounddevice](https://python-sounddevice.readthedocs.io/en/latest/)

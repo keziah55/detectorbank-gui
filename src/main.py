@@ -61,6 +61,12 @@ class DBGui(QMainWindow):
             
         self.downsample = 10
         
+        
+        fileDir = os.path.split(__file__)[0]
+        path = os.path.join(fileDir, "..", "images/icon_alpha.png")
+        icon = QIcon(path)
+        self.setWindowIcon(icon)
+        
         self.showMaximized()
 
     @property

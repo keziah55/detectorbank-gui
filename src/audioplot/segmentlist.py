@@ -41,6 +41,14 @@ class _SegmentList(GroupBox):
         Emitted when a segment's range changed in spin box.
     """
     
+    requestPlaySegment = Signal(object)
+    """ **signal** requestPlaySegment(SegmentWidget `segment`) 
+    
+        Emitted when user requests segment be played.
+    """
+    
+    requestStopSegment = Signal()
+    
     def __init__(self, parent=None, defaultMin=None, defaultMax=None):
         super().__init__(parent=parent, title="Segments", layout="vbox")
         
@@ -85,10 +93,13 @@ class _SegmentList(GroupBox):
         
         segment = SegmentWidget(start, stop, colour=colour)
         self._segments.append(segment)
-        self.layout.insertWidget(row, segment)
         segmentLayout = segment.layout()
+        self.layout.insertWidget(row, segment)
+        
         segment.startValueChanged.connect(lambda value: self._segmentRangeChanged(segment, value, None))
         segment.stopValueChanged.connect(lambda value: self._segmentRangeChanged(segment, None, value))
+        segment.requestPlaySegment.connect(self._requestPlaySegment)
+        segment.requestStopSegment.connect(self.requestStopSegment)
         
         if row > 1:
             # don't add remove button to first segment
@@ -130,7 +141,7 @@ class _SegmentList(GroupBox):
         """ Emit :attr:`requestRemoveSegment` with correct index. """
         idx = self._segments.index(segment)
         self.requestRemoveSegment.emit(idx)
-            
+        
     def removeSegment(self, idx):
         """ Remove segment from row `idx+1` in layout (note that row 0 is 'add button') """
         row = idx + 1
@@ -149,3 +160,18 @@ class _SegmentList(GroupBox):
     def _clearSegments(self):
         for row in reversed(range(1, self.layout.rowCount())-1):
             self.removeSegment(row)
+            
+    def _requestPlaySegment(self, requestSegment):
+        print("_requestPlaySegment")
+        for segment in self._segments:
+            # if another segment is currently playing, stop it
+            if requestSegment!= segment and segment.playing:
+                print(f"stopping segment {segment.values}")
+                segment.playStopSegment(play=False)
+        self.requestPlaySegment.emit(requestSegment)
+        
+    def stopSegment(self, segment=None):
+        if segment is None:
+            return
+        else:
+            segment.playStopSegment(play=False)
