@@ -47,6 +47,7 @@ class SegmentPlotWidget(QWidget):
             
             yData = np.array([item._dataset.y[idx] for item in self.plotWidget.plotItem.dataItems])
             channel = np.abs(yData-mousePoint.y()).argmin()
+            # TODO define max distance that still counts
             
             self.setHoverLabel(xData[idx], yData[channel], channel)
             
