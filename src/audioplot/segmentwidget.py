@@ -148,13 +148,14 @@ class SegmentWidget(QWidget):
         
     def playStopSegment(self, play=None, emit=False):
         """ Emit :attr:`requestPlaySegment`. """
+        import inspect; print(f"playStopSegment called by {inspect.stack()[1].function}; {play=}; {emit=}")
         if play is None:
             self.playing = not self.playing
         elif self.playing == play: # nothing to be done
             return None
         else:
             self.playing = play
-        print(f"\n{self.values} playStopSegment {self.playing}")
+        print(f"{self.values} playStopSegment set playing to {self.playing}")
         if emit:
             if self.playing:
                 self.requestPlaySegment.emit(self)

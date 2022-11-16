@@ -35,9 +35,9 @@ class AudioPlayWorker(QObject):
     def setParams(self, audio=None, sr=None):
         if audio is not None:
             fade = np.concatenate((
-                np.linspace(0, 1, num=self._fadeSize),
-                np.ones(len(audio)-2*self._fadeSize),
-                np.linspace(1, 0, num=self._fadeSize)))
+                np.linspace(0, 1, num=self._fadeSize, dtype=np.float32),
+                np.ones(len(audio)-2*self._fadeSize, dtype=np.float32),
+                np.linspace(1, 0, num=self._fadeSize, dtype=np.float32)))
             self.audio = audio * fade
         if sr is not None:
             self.sr = sr
@@ -207,7 +207,7 @@ class AudioPlotWidget(QWidget):
             print("nothing in queue")
             return None
         segment, audio, sr = self._playQueue.popleft()
-        print(f"about to play {segment.values[0]/self.sr:g} to {segment.values[1]/sr:g}")
+        print(f"about to play {segment.values[0]} to {segment.values[1]}")
         print("playing")
         self._playingSegment = segment
         self._playWorker.setParams(audio, sr)
@@ -227,6 +227,7 @@ class AudioPlotWidget(QWidget):
             
     def _playFinished(self):
         self.segmentList.stopSegment(self._playingSegment)
+        self._playingSegment = None
         self._playThread.quit()
         print(f"play finished normally; thread running: {self._playThread.isRunning()}")
         

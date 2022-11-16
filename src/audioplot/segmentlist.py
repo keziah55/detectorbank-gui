@@ -162,11 +162,11 @@ class _SegmentList(GroupBox):
             self.removeSegment(row)
             
     def _requestPlaySegment(self, requestSegment):
-        print("_requestPlaySegment")
+        print(f"_requestPlaySegment {requestSegment.values}")
         for segment in self._segments:
             # if another segment is currently playing, stop it
             if requestSegment!= segment and segment.playing:
-                print(f"stopping segment {segment.values}")
+                print(f"_requestPlaySegment stopping segment {segment.values}")
                 segment.playStopSegment(play=False)
         self.requestPlaySegment.emit(requestSegment)
         
