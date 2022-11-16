@@ -4,7 +4,7 @@
 Main window
 """
 from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QFileDialog, 
-                            QMessageBox, QProgressBar)
+                            QMessageBox, QProgressBar, QTabBar, QToolBar)
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from .audioplot import AudioPlotWidget
@@ -18,6 +18,7 @@ from functools import partial
 from collections import deque, namedtuple
 
 SegmentAnalysis = namedtuple("SegmentAnalysis", ["segement", "analyser"])
+WidgetView = namedtuple("WidgetView", ["dockwidget", "viewmode"])
 
 class DBGui(QMainWindow):
     
@@ -46,13 +47,13 @@ class DBGui(QMainWindow):
         
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
         
-        widgets = {"audioinput":('Audio Input', self.audioplot, 'left'),
-                   "args":('Parameters',self.argswidget, 'right'),
-                   "output":("Output", self.hopfplot, 'bottom')}
+        widgets = {"audioinput":('Audio Input', self.audioplot, 'left', 'input'),
+                   "args":('Parameters',self.argswidget, 'right', 'input'),
+                   "output":("Output", self.hopfplot, 'bottom', 'output')}
         
         for key, values in widgets.items():
-            name, widget, area = values
-            self.createDockWidget(widget, area, name, key)
+            name, widget, area, viewmode = values
+            self.createDockWidget(widget, area, name, viewmode, key)
         
         self._currentAudioFile = None
         self._openAudioDir = os.getcwd()
@@ -60,6 +61,8 @@ class DBGui(QMainWindow):
             self._openAudio(audioFile)
             
         self.downsample = 10
+        
+        self._switchView("all")
         
         self.showMaximized()
 
@@ -152,7 +155,7 @@ class DBGui(QMainWindow):
             inc = self._progressQueue.popleft()
             self._progressBar.setValue(self._progressBar.value()+inc)
         
-    def createDockWidget(self, widget, area, title, key=None):
+    def createDockWidget(self, widget, area, title, viewmode, key=None):
         if area in self.dockAreas:
             area = self.dockAreas[area]
         dock = QDockWidget()
@@ -164,8 +167,20 @@ class DBGui(QMainWindow):
             self.dockWidgets = {}
         if key is None:
             key = title
-        self.dockWidgets[key] = dock
+        self.dockWidgets[key] = WidgetView(dock, viewmode)
     
+    def _switchView(self, mode):
+        """ Switch between showing 'input', 'output' or 'all' widgets. """ 
+        for widget, viewmode in self.dockWidgets.values():
+            visible = True if mode == "all" or viewmode == mode else False
+            widget.setVisible(visible)
+                
+    def _viewTabChanged(self, idx):
+        """ Slot for view tab bar changed signal """
+        mode = self._tabBar.tabText(idx).lower()
+        self._switchView(mode)
+            
+            
     def _createActions(self):
         self.openAudioFileAction = QAction(
             "&Open audio file", self, shortcut=QKeySequence.Open, 
@@ -193,10 +208,22 @@ class DBGui(QMainWindow):
             statusTip="Edit preferences",
             triggered=self.prefDialog.show)
         
+        
     def _createToolBars(self):
+        
+        self.viewToolBar = QToolBar("View")
+        self._tabBar = QTabBar()
+        for label in ["All", "Input", "Output"]:
+            idx = self._tabBar.addTab(label)
+            self._tabBar.setTabToolTip(idx, f"Show {label.lower()} widgets")
+        self._tabBar.currentChanged.connect(self._viewTabChanged)
+        self.viewToolBar.addWidget(self._tabBar)
+        self.addToolBar(self.viewToolBar)
+        
         self.runToolBar = self.addToolBar("Run")
         self.runToolBar.addAction(self.openAudioFileAction)
         self.runToolBar.addAction(self.analyseAction)
+        
         
     def _createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
