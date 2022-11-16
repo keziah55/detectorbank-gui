@@ -123,25 +123,31 @@ class DBGui(QMainWindow):
             n0, n1 = segment.samples
             numSamples += (n1-n0)
             
-            key = f"{n0}..{n1}"
+            idx = self.hopfplot.addPlot(params['detChars'][:,0], segment)
+            
+            # key = f"{n0}..{n1}"
             analyser = Analyser(self.audio, self.sr, params, n0, n1, self.downsample)
-            sa = SegmentAnalysis(segment, analyser)
-            self.analysers[key] = sa
+            # sa = SegmentAnalysis(segment, analyser)
+            # self.analysers[key] = sa
+            
+            self.analysers[idx] = analyser
             
             analyser.progress.connect(self._incrementProgress)
-            analyser.finished.connect(partial(self._analyserFinished, key=key))
+            analyser.finished.connect(partial(self._analyserFinished, key=idx))
                 # partial(self.hopfplot.addResponse, sampleRange=segment.samples, segmentColour=segment.colour))
             
         numSamples //= self.downsample
         self._progressBar.setMaximum(numSamples)
         self._progressQueue.clear()
         
-        for _, analyser in self.analysers.values():
+        for analyser in self.analysers.values():
             analyser.start()
         
     def _analyserFinished(self, result, key):
-        segment, _ = self.analysers.pop(key)
-        self.hopfplot.addResponse(result, segment=segment)# sampleRange=segment.samples, segmentColour=segment.colour)
+        # segment, _ = self.analysers.pop(key)
+        self.analysers.pop(key)
+        self.hopfplot.addData(key, result)
+        # self.hopfplot.addResponse(result, segment=segment)# sampleRange=segment.samples, segmentColour=segment.colour)
         
         if not self.analysers:
             self._progressBar.setValue(self._progressBar.maximum())
