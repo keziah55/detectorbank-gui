@@ -67,7 +67,7 @@ class HopfPlot(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)

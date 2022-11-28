@@ -1,6 +1,7 @@
 from qtpy.QtWidgets import QWidget, QVBoxLayout
-from customQObjects.widgets import GroupBox
+from customQObjects.widgets import GroupBox, ComboBox
 from customQObjects.core import Settings
+from ..profilemanager import ProfileManager
 
 class ParamPreferences(QWidget):
     
@@ -10,21 +11,32 @@ class ParamPreferences(QWidget):
         super().__init__()
         self.mainWindow = mainWindow
         
-        group = GroupBox("Profiles")
+        profileGroup = GroupBox("Profiles", layout="form")
+        self.profileBox = ComboBox()
+        self.profileBox.addItems(["None"] + ProfileManager().profiles)
+        self.profileBox.setToolTip("Default DetectorBank profile")
+        profileGroup.addRow("Default profile:", self.profileBox)
         
         layout = QVBoxLayout()
-        layout.addWidget(group)
+        layout.addWidget(profileGroup)
         self.setLayout(layout)
         
         self.setCurrentValues()
         self.apply()
         
     def setCurrentValues(self):
-        pass
-        # self.settings = Settings()
-        # self.settings.beginGroup("params/profiles")
+        settings = Settings()
+        settings.beginGroup(self.name.lower())
         
-        # self.settings.endGroup()
+        defaultProfile = settings.value("defaultProfile", cast=str)
+        self.profileBox.setCurrentText(defaultProfile)
+        if defaultProfile != "None":
+            self.mainWindow.argswidget._loadProfile(defaultProfile)
+        
+        settings.endGroup()
         
     def apply(self):
-        pass
+        settings = Settings()
+        settings.beginGroup(self.name.lower())
+        settings.setValue("defaultProfile", self.profileBox.currentText())
+        settings.endGroup()

@@ -93,7 +93,7 @@ class ArgsWidget(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)
