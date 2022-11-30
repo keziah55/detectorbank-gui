@@ -4,8 +4,11 @@
 Display multiple output plots
 """
 from pyqtgraph import PlotWidget, InfiniteLine
-from qtpy.QtWidgets import QScrollArea, QSizePolicy, QWidget, QHBoxLayout, QLabel, QVBoxLayout
+from qtpy.QtWidgets import (QScrollArea, QSizePolicy, QWidget, QHBoxLayout, QLabel, 
+                            QVBoxLayout, QToolBar, QStackedWidget, QSpinBox, 
+                            QGridLayout)
 from qtpy.QtCore import Qt, Slot
+from qtpy.QtGui import QIcon
 import numpy as np
 import itertools
 
@@ -58,19 +61,190 @@ class SegmentPlotWidget(QWidget):
             
     def __getattr__(self, name):
         return getattr(self.plotWidget, name)
+    
+class PlotPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
+        
+    def addPlot(self, plot, row, col):
+        return self.layout.addWidget(plot, row, col)
+    
+    def clear(self):
+        self.layout.clear()
+        
+    def getNextRowCol(self):
+        """ Return row and column of next empty space """
+        if self.layout.count() == 0:
+            return 0, 0
+        else:
+            row = self.layout.rowCount()
+            col = self.layout.columnCount()
+            rem = self.layout.count() % (row*col)
+            if rem == col:
+                row += 1
+                col = 0
+            return row, col
 
-class HopfPlot(QScrollArea):
+class HopfPlot(QWidget):
     def __init__(self, parent, *args, sr=None, **kwargs):
         super().__init__()
-        # self.widget = GraphicsLayoutWidget(parent=parent)
-        self.widget = _HopfPlot(parent, *args, sr=None, **kwargs)
-        self.setWidget(self.widget)
-        self.setWidgetResizable(True)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         
-    def __getattr__(self, name):
-        return getattr(self.widget, name)
+        ## toolbar and pages ##
+        self.toolbar = QToolBar()
+        self.stack = QStackedWidget()
+        # TODO legend
+        
+        self.rowsBox = QSpinBox()
+        self.colsBox = QSpinBox()
+        self.rowsBox.setPrefix("Rows: ")
+        self.colsBox.setPrefix("Columns: ")
+        self.rowsBox.setValue(2)
+        self.colsBox.setValue(2)
+        
+        self.pageLabel = QLabel()
+        
+        self.toolbar.addWidget(self.rowsBox)
+        self.toolbar.addWidget(self.colsBox)
+        self.toolbar.addSeparator()
+        
+        self.previousPageAction = self.toolbar.addAction("Previous page")
+        if (icon := QIcon.fromTheme("go-previous")) is not None:
+            self.previousPageAction.setIcon(icon)
+        
+        self.toolbar.addWidget(self.pageLabel)
+        
+        self.nextPageAction = self.toolbar.addAction("Next page")
+        if (icon := QIcon.fromTheme("go-next")) is not None:
+            self.nextPageAction.setIcon(icon)
+        
+        self.previousPageAction.triggered.connect(self._previousPage)
+        self.nextPageAction.triggered.connect(self._nextPage)
+        
+        self.page = 0
+        
+        ## plots ##
+        
+        # from matplotlib.colours.CSS4_COLORS 
+        # ['yellow', 'red', 'firebrick', 'darkorange', 'deeppink', 'darkmagenta', 
+        # 'mediumvioletred', 'green', 'lime',  'darkslategrey', 'lightslategrey', 'skyblue', 'blue']
+        self.colours = ['#FFFF00', '#FF0000', '#B22222', '#FF8C00', '#FF1493',
+                        '#8B008B', '#C71585', '#008000', '#00FF00', '#2F4F4F',
+                        '#778899', '#87CEEB', '#0000FF']
+        self._plots = []
+        
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.stack)
+        self.setLayout(layout)
+        
+    @property
+    def page(self):
+        return self.stack.currentIndex()
+    
+    @page.setter
+    def page(self, idx):
+        if idx < 0:
+            idx = 0
+        elif idx >= self.stack.count():
+            idx = self.stack.count() - 1
+        self.stack.setCurrentIndex(idx)
+        self.pageLabel.setText(f"Page {idx+1}")
+        
+    @property
+    def rows(self):
+        return self.rowsBox.value()
+    
+    @property
+    def cols(self):
+        return self.colsBox.value()
+        
+    def _previousPage(self):
+        self.page -= 1
+        
+    def _nextPage(self):
+        self.page += 1
+        
+    @property
+    def sr(self):
+        return self._sr
+    
+    @sr.setter
+    def sr(self, value):
+        self._sr = value
+        
+    def setSampleRate(self, value):
+        self.sr = value
+        
+        
+    def addPlots(self, freqs, segments):
+        
+        if self.stack.count() == 0:
+            page = PlotPage()
+            row, col = 0, 0
+            self.stack.addWidget(page) 
+            print(f"made PlotPage {page}")
+        else:
+            page = self.stack.widget(self.stack.count()-1)
+            row, col = page.getNextRowCol()
+            print(f"got PlotPage {page}")
+        
+        for segment in segments:
+        
+            if row == self.rows and col == self.cols:
+                page = PlotPage()
+                row, col = 0, 0
+                self.stack.addWidget(page) 
+                print(f"made new PlotPage {page}")
+        
+            s0, s1 = segment.samples
+            
+            if self.sr is not None:
+                title = f"{s0/self.sr:.4g}-{s1/self.sr:.4g} seconds"
+            else:
+                title = f"{s0}-{s1} samples"
+            if segment.colour is not None:
+                title = f'<span style="color:{segment.colour}">{title}</span>'
+                
+            p = SegmentPlotWidget(self, title=title, freqs=freqs, segment=segment)
+            # p.scene().sigMouseMoved.connect(lambda pos: self._mouseHover(p, pos))
+            page.addPlot(p, row, col)
+            print(f"added plot {p} to page {page} at {row}, {col}")
+            self._plots.append(p)
+                
+            if self.sr is not None:
+                p.setLabel('bottom', "Time", units="s")
+            else:
+                p.setLabel('bottom', "Samples")
+                
+            col += 1
+            if col == self.cols:
+                col = 0
+                row += 1
+                
+        print(f"stack count: {self.stack.count()}")
+                
+    def addData(self, idx, data):
+        p = self._plots[idx]
+        self.page = idx // (self.rows*self.cols)
+        
+        chans, size = data.shape
+        
+        s0, s1 = p.segment.samples
+        
+        if self.sr is not None:
+            t = np.linspace(s0/self.sr, s1/self.sr, size)
+        else:
+            # TODO downsampling
+            t = np.arange(s0, s1)
+        
+        colours = itertools.cycle(self.colours)
+        
+        for k, resp in enumerate(data):
+            pen = next(colours)
+            p.plot(t, resp, pen=pen, name=p.freqs[k])
+            
         
 class _HopfPlot(QWidget):
     def __init__(self, parent, *args, sr=None, **kwargs):
