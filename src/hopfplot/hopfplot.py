@@ -177,26 +177,22 @@ class HopfPlot(QWidget):
     def setSampleRate(self, value):
         self.sr = value
         
-        
     def addPlots(self, freqs, segments):
         
         if self.stack.count() == 0:
             page = PlotPage()
             row, col = 0, 0
             self.stack.addWidget(page) 
-            print(f"made PlotPage {page}")
         else:
             page = self.stack.widget(self.stack.count()-1)
             row, col = page.getNextRowCol()
-            print(f"got PlotPage {page}")
         
         for segment in segments:
         
-            if row == self.rows and col == self.cols:
+            if row >= self.rows:
                 page = PlotPage()
                 row, col = 0, 0
                 self.stack.addWidget(page) 
-                print(f"made new PlotPage {page}")
         
             s0, s1 = segment.samples
             
@@ -208,9 +204,7 @@ class HopfPlot(QWidget):
                 title = f'<span style="color:{segment.colour}">{title}</span>'
                 
             p = SegmentPlotWidget(self, title=title, freqs=freqs, segment=segment)
-            # p.scene().sigMouseMoved.connect(lambda pos: self._mouseHover(p, pos))
             page.addPlot(p, row, col)
-            print(f"added plot {p} to page {page} at {row}, {col}")
             self._plots.append(p)
                 
             if self.sr is not None:
@@ -222,8 +216,6 @@ class HopfPlot(QWidget):
             if col == self.cols:
                 col = 0
                 row += 1
-                
-        print(f"stack count: {self.stack.count()}")
                 
     def addData(self, idx, data):
         p = self._plots[idx]
@@ -245,142 +237,3 @@ class HopfPlot(QWidget):
             pen = next(colours)
             p.plot(t, resp, pen=pen, name=p.freqs[k])
             
-        
-class _HopfPlot(QWidget):
-    def __init__(self, parent, *args, sr=None, **kwargs):
-        super().__init__()
-        self.sr = sr
-        
-        # from matplotlib.colours.CSS4_COLORS 
-        # ['yellow', 'red', 'firebrick', 'darkorange', 'deeppink', 'darkmagenta', 
-        # 'mediumvioletred', 'green', 'lime',  'darkslategrey', 'lightslategrey', 'skyblue', 'blue']
-        self.colours = ['#FFFF00', '#FF0000', '#B22222', '#FF8C00', '#FF1493',
-                        '#8B008B', '#C71585', '#008000', '#00FF00', '#2F4F4F',
-                        '#778899', '#87CEEB', '#0000FF']
-        self._plots = []
-        
-        self.layout = QHBoxLayout()
-        self.setLayout(self.layout)
-        
-    @property
-    def sr(self):
-        return self._sr
-    
-    @sr.setter
-    def sr(self, value):
-        self._sr = value
-        
-    def setSampleRate(self, value):
-        self.sr = value
-        
-    def addPlot(self, freqs, segment) -> int:
-        """ Add empty plot for `segment`, which will show responses for freqencies `freqs` 
-        
-            Return index of plot in layout
-        """
-        layoutIdx = segment.idx
-        
-        s0, s1 = segment.samples
-        
-        if self.sr is not None:
-            title = f"{s0/self.sr:.4g}-{s1/self.sr:.4g} seconds"
-        else:
-            title = f"{s0}-{s1} samples"
-        if segment.colour is not None:
-            title = f'<span style="color:{segment.colour}">{title}</span>'
-            
-        if layoutIdx is None:
-            layoutIdx = self.layout.count()
-            
-        p = SegmentPlotWidget(self, title=title, freqs=freqs, segment=segment)
-        # p.scene().sigMouseMoved.connect(lambda pos: self._mouseHover(p, pos))
-        self.layout.insertWidget(layoutIdx, p)
-        self._plots.append(p)
-            
-        if self.sr is not None:
-            p.setLabel('bottom', "Time", units="s")
-        else:
-            p.setLabel('bottom', "Samples")
-            
-        return layoutIdx
-    
-    def addData(self, idx, data):
-        p = self.layout.itemAt(idx).widget()
-        
-        chans, size = data.shape
-        
-        s0, s1 = p.segment.samples
-        
-        if self.sr is not None:
-            t = np.linspace(s0/self.sr, s1/self.sr, size)
-        else:
-            # TODO downsampling
-            t = np.arange(s0, s1)
-        
-        colours = itertools.cycle(self.colours)
-        
-        for k, resp in enumerate(data):
-            pen = next(colours)
-            p.plot(t, resp, pen=pen, name=p.freqs[k])
-        
-    def addResponse(self, data, segment=None, sampleRange=None, titleColour=None, layoutIdx=None):
-        """ Plot `data`. 
-        
-            If `segment` is given, `sampleRange`, `titleColour` and `layoutIdx`
-            will be retreived from attributes.
-            
-            If not giving `segment`, provide these values, where desired.
-        """
-        # TODO make all plots before starting analysis, then add data when it's ready?
-        chans, size = data.shape
-        
-        if segment is not None:
-            sampleRange = segment.samples
-            titleColour = segment.colour
-            layoutIdx = segment.idx
-        
-        if sampleRange is None:
-            sampleRange = (0, size)
-        s0, s1 = sampleRange
-        
-        if self.sr is not None:
-            title = f"{s0/self.sr:.4g}-{s1/self.sr:.4g} seconds"
-        else:
-            title = f"{s0}-{s1} samples"
-        if titleColour is not None:
-            title = f'<span style="color:{titleColour}">{title}</span>'
-            
-        if layoutIdx is None:
-            layoutIdx = self.layout.count()
-            
-        p = PlotWidget(title=title)
-        p.scene().sigMouseMoved.connect(lambda pos: self._mouseHover(p, pos))
-        self.layout.insertWidget(layoutIdx, p)
-        self._plots.append(p)
-            
-        if self.sr is not None:
-            t = np.linspace(s0/self.sr, s1/self.sr, size)
-            p.setLabel('bottom', "Time", units="s")
-        else:
-            # TODO downsampling
-            t = np.arange(s0, s1)
-            p.setLabel('bottom', "Samples")
-        
-        colours = itertools.cycle(self.colours)
-        
-        for resp in data:
-            pen = next(colours)
-            p.plot(t, resp, pen=pen)
-        
-        
-    # def _mouseHover(self, plotwidget, pos):
-        
-    #     width = height = 50
-    #     x = pos.x() + width / 2
-    #     y = pos.y() + height / 2
-    #     rect = QRectF(x, y, width, height)
-    #     items = plotwidget.scene().items(rect)
-    #     print(f"\nplot {plotwidget} hovered; pos: {pos}; items: {items}")
-        
-            
-        
