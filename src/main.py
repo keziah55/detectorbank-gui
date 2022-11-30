@@ -49,8 +49,8 @@ class DBGui(QMainWindow):
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
         
         widgets = {"audioinput":('Audio Input', self.audioplot, 'left', 'input'),
-                   "args":('Parameters',self.argswidget, 'right', 'input'),
-                   "output":("Output", self.hopfplot, 'bottom', 'output')}
+                   "args":('Parameters',self.argswidget, 'left', 'input'),
+                   "output":("Output", self.hopfplot, 'right', 'output')}
         
         for key, values in widgets.items():
             name, widget, area, viewmode = values
