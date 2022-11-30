@@ -22,36 +22,58 @@ class AudioPlayWorker(QObject):
     
     stoppedManually = Signal()
     
-    def __init__(self, audio=None, sr=None):
+    def __init__(self, audio=None, sr=None, bufSize=4800):
         super().__init__()
-        self.audio = None
-        self.sr = None
+        self.audio = audio
+        self.sr = sr
         
         self._fadeSize = 10 # number of samples over which to fade in and out
+        self._bufSize = bufSize # buffer size in samples
         
         self.setParams(audio, sr)
         
+        self.cancelled = False
         
     def setParams(self, audio=None, sr=None):
         if audio is not None:
-            fade = np.concatenate((
-                np.linspace(0, 1, num=self._fadeSize, dtype=np.float32),
-                np.ones(len(audio)-2*self._fadeSize, dtype=np.float32),
-                np.linspace(1, 0, num=self._fadeSize, dtype=np.float32)))
-            self.audio = audio * fade
+            self.audio = audio
         if sr is not None:
             self.sr = sr
+            
+    def _makeEnvelope(self, size):
+        # envelope to fade buffers in and out
+        envelope = np.concatenate((
+            np.zeros(self._fadeSize, dtype=np.float32),
+            np.linspace(0, 1, num=self._fadeSize, dtype=np.float32),
+            np.ones(size-4*self._fadeSize, dtype=np.float32),
+            np.linspace(1, 0, num=self._fadeSize, dtype=np.float32),
+            np.zeros(self._fadeSize, dtype=np.float32)))
+        return envelope
         
     def play(self):
-        print("worker play")
-        sd.play(self.audio, self.sr, blocking=True)
+        i = 0
+        while not self.cancelled:
+            audio = self.audio[i*self._bufSize:(i+1)*self._bufSize]
+            audio *= self._makeEnvelope(len(audio))
+            i += 1
+            sd.play(audio, self.sr, blocking=True)
+            if i*self._bufSize >= len(self.audio):
+                break
+        
+        # print("worker play")
+        # sd.play(self.audio, self.sr, blocking=True)
+        self.cancelled = False
         self.stopped.emit()
         
+    # def stop(self):
+    #     print("worker stop")
+    #     sd.stop()
+    #     print("worker stopped")
+    #     self.stoppedManually.emit()
+        
     def stop(self):
-        print("worker stop")
-        sd.stop()
-        print("worker stopped")
-        self.stoppedManually.emit()
+        print("set cancelled to True")
+        self.cancelled = True
         
 PlayQueueItem = namedtuple("PlayAudio", ["segment", "audio", "sr"])
 
