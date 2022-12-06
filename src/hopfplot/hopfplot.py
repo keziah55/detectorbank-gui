@@ -71,7 +71,10 @@ class PlotPage(QWidget):
         return self.layout.addWidget(plot, row, col)
     
     def clear(self):
-        self.layout.clear()
+        for idx in reversed(range(self.layout.count(), 0)):
+            item = self.layout.takeAt(idx)
+            widget = item.widget()
+            widget.deleteLater()
         
     def getNextRowCol(self):
         """ Return row and column of next empty space """
@@ -143,6 +146,7 @@ class HopfPlot(QWidget):
         self.clearAction = self.toolbar.addAction("Clear")
         if (icon := QIcon.fromTheme("edit-clear")) is not None:
             self.clearAction.setIcon(icon)
+        self.clearAction.triggered.connect(self.removeAll)
         
         ## plots ##
         
@@ -204,6 +208,7 @@ class HopfPlot(QWidget):
         self.sr = value
         
     def _resetGrid(self):
+        """ Remove all plots and re-add them with current grid dimensions """
         # remove all pages
         self._clearStack()
         
@@ -225,12 +230,19 @@ class HopfPlot(QWidget):
                 row += 1
         self.page = 1
         
+    def removeAll(self):
+        for idx in range(self.stack.count()):
+            page = self.stack.widget(idx)
+            page.clear()
+        self.clear()
+        
     def clear(self):
         """ Remove all pages from stack """
         self._clearStack()
         self._plots = []
             
     def _clearStack(self):
+        """ Remove all widgets from stack and reset current page index and count """
         for i in reversed(range(self.stack.count(), 0)):
             item = self.stack.takeAt(i)
             widget = item.widget()
