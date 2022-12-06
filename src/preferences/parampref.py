@@ -28,10 +28,10 @@ class ParamPreferences(QWidget):
         settings = Settings()
         settings.beginGroup(self.name.lower())
         
-        defaultProfile = settings.value("defaultProfile", cast=str)
-        self.profileBox.setCurrentText(defaultProfile)
-        if defaultProfile != "None":
-            self.mainWindow.argswidget._loadProfile(defaultProfile)
+        # defaultProfile = settings.value("defaultProfile", cast=str)
+        # self.profileBox.setCurrentText(defaultProfile)
+        # if defaultProfile != "None":
+            # self.mainWindow.argswidget._loadProfile(defaultProfile)
         
         settings.endGroup()
         

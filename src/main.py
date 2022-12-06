@@ -88,6 +88,12 @@ class DBGui(QMainWindow):
         idx, *_ = [idx for idx in range(self._viewTabs.count()) 
                    if self._viewTabs.tabText(idx).lower()==self._viewmode]
         self._viewTabs.setCurrentIndex(idx)
+        
+        # restore previous profile
+        profile = settings.value("params/currentProfile", cast=str)
+        if profile != "None":
+            self.argswidget._loadProfile(profile)
+        
         return super().show()
         
     def closeEvent(self, event):
@@ -97,6 +103,10 @@ class DBGui(QMainWindow):
         settings.setValue("viewMode", self._viewmode)
         settings.setValue(f"viewModes/{self._viewmode}", self.saveState())
         settings.endGroup()
+        
+        profile = self.argswidget.currentProfile if not self.argswidget.currentProfileAltered else None
+        settings.setValue("params/currentProfile", profile)
+        
         return super().closeEvent(event)
 
     @property
