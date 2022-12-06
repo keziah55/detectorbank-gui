@@ -4,10 +4,9 @@
 Display multiple output plots
 """
 from pyqtgraph import PlotWidget, InfiniteLine
-from qtpy.QtWidgets import (QScrollArea, QSizePolicy, QWidget, QHBoxLayout, QLabel, 
-                            QVBoxLayout, QToolBar, QStackedWidget, QSpinBox, 
-                            QGridLayout)
-from qtpy.QtCore import Qt, Slot
+from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QToolBar, QSpinBox, 
+                            QStackedWidget, QGridLayout)
+from qtpy.QtCore import Qt, Slot, QTimer
 from qtpy.QtGui import QIcon
 import numpy as np
 import itertools
@@ -96,6 +95,7 @@ class HopfPlot(QWidget):
         self.stack = QStackedWidget()
         # TODO legend
         
+        ## grid dimensions ##
         self.rowsBox = QSpinBox()
         self.colsBox = QSpinBox()
         self.rowsBox.setPrefix("Rows: ")
@@ -103,11 +103,17 @@ class HopfPlot(QWidget):
         self.rowsBox.setValue(2)
         self.colsBox.setValue(2)
         
-        self.pageLabel = QLabel()
-        
         self.toolbar.addWidget(self.rowsBox)
         self.toolbar.addWidget(self.colsBox)
+        self.applyGridAction = self.toolbar.addAction("Apply")
+        if (icon := QIcon.fromTheme("ok")) is not None:
+            self.applyGridAction.setIcon(icon)
+        self.applyGridAction.triggered.connect(self._resetGrid)
+        
         self.toolbar.addSeparator()
+        
+        ## pages ##
+        self.pageLabel = QLabel()
         
         self.previousPageAction = self.toolbar.addAction("Previous page")
         if (icon := QIcon.fromTheme("go-previous")) is not None:
@@ -122,7 +128,21 @@ class HopfPlot(QWidget):
         self.previousPageAction.triggered.connect(self._previousPage)
         self.nextPageAction.triggered.connect(self._nextPage)
         
+        # manually count pages in stack
+        # stack.count() is unreliable when pages are deleted
+        self._pageCount = 0
         self.page = 0
+        
+        self.toolbar.addSeparator()
+        
+        ## export and clear##
+        self.exportAction = self.toolbar.addAction("Export")
+        if (icon := QIcon.fromTheme("document-save-as")) is not None:
+            self.exportAction.setIcon(icon)
+            
+        self.clearAction = self.toolbar.addAction("Clear")
+        if (icon := QIcon.fromTheme("edit-clear")) is not None:
+            self.clearAction.setIcon(icon)
         
         ## plots ##
         
@@ -147,10 +167,22 @@ class HopfPlot(QWidget):
     def page(self, idx):
         if idx < 0:
             idx = 0
-        elif idx >= self.stack.count():
-            idx = self.stack.count() - 1
+        elif idx >= self._pageCount:
+            idx = self._pageCount - 1
         self.stack.setCurrentIndex(idx)
-        self.pageLabel.setText(f"Page {idx+1}")
+        self.pageLabel.setText(f"Page {idx+1}/{self._pageCount}")
+        
+    def _newPage(self):
+        page = PlotPage()
+        self.stack.insertWidget(self._pageCount, page)
+        self._pageCount += 1
+        return page
+    
+    def _previousPage(self):
+        self.page -= 1
+        
+    def _nextPage(self):
+        self.page += 1
         
     @property
     def rows(self):
@@ -159,12 +191,6 @@ class HopfPlot(QWidget):
     @property
     def cols(self):
         return self.colsBox.value()
-        
-    def _previousPage(self):
-        self.page -= 1
-        
-    def _nextPage(self):
-        self.page += 1
         
     @property
     def sr(self):
@@ -177,22 +203,61 @@ class HopfPlot(QWidget):
     def setSampleRate(self, value):
         self.sr = value
         
-    def addPlots(self, freqs, segments):
+    def _resetGrid(self):
+        # remove all pages
+        self._clearStack()
         
-        if self.stack.count() == 0:
-            page = PlotPage()
+        # new first page
+        page = self._newPage()
+        row, col = 0, 0
+            
+        # add plots
+        for p in self._plots:
+            if row >= self.rows:
+                page = self._newPage()
+                row, col = 0, 0
+                
+            page.addPlot(p, row, col)
+                
+            col += 1
+            if col == self.cols:
+                col = 0
+                row += 1
+        self.page = 1
+        
+    def clear(self):
+        """ Remove all pages from stack """
+        self._clearStack()
+        self._plots = []
+            
+    def _clearStack(self):
+        for i in reversed(range(self.stack.count(), 0)):
+            item = self.stack.takeAt(i)
+            widget = item.widget()
+            self.stack.removeWidget(widget)
+            widget.deleteLater()
+        self._pageCount = 0
+        self.page = 0
+        
+    def export(self):
+        """ Export all plots """
+        pass
+        
+    def addPlots(self, freqs, segments):
+        """ Create empty plots for the given segments, which will contain data for the given frequencies """
+        
+        if self._pageCount == 0:
+            page = self._newPage()
             row, col = 0, 0
-            self.stack.addWidget(page) 
         else:
-            page = self.stack.widget(self.stack.count()-1)
+            page = self.stack.widget(self._pageCount-1)
             row, col = page.getNextRowCol()
         
         for segment in segments:
         
             if row >= self.rows:
-                page = PlotPage()
+                page = self._newPage()
                 row, col = 0, 0
-                self.stack.addWidget(page) 
         
             s0, s1 = segment.samples
             
@@ -218,6 +283,7 @@ class HopfPlot(QWidget):
                 row += 1
                 
     def addData(self, idx, data):
+        """ Plot `data` on plot at index `idx` """
         p = self._plots[idx]
         self.page = idx // (self.rows*self.cols)
         
