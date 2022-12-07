@@ -279,7 +279,7 @@ class DBGui(QMainWindow):
         self.viewToolBar = QToolBar("View")
         self.viewToolBar.setObjectName("View")
         self._viewTabs = QTabBar()
-        for label in ["All", "Input", "Output"]:
+        for label in ["All", "Output"]:
             idx = self._viewTabs.addTab(label)
             self._viewTabs.setTabToolTip(idx, f"Show {label.lower()} widgets")
         self._viewTabs.currentChanged.connect(self._viewTabChanged)

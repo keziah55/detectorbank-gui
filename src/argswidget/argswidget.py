@@ -175,8 +175,8 @@ class _AbsZArgsWidget(QWidget):
             profileGroup.addWidget(button)
             
         layout = QVBoxLayout()
-        layout.addLayout(form)
         layout.addWidget(profileGroup)
+        layout.addLayout(form)
         
         layout.addWidget(self.restoreDefaultsButton)
             
