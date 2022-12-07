@@ -3,11 +3,11 @@
 """
 Display multiple output plots
 """
-from pyqtgraph import PlotWidget, InfiniteLine
+from pyqtgraph import PlotWidget, InfiniteLine, mkPen
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QToolBar, QSpinBox, 
                             QStackedWidget, QGridLayout)
 from qtpy.QtCore import Qt, Slot, QTimer, QPointF
-from qtpy.QtGui import QIcon
+from qtpy.QtGui import QIcon, QPen
 import numpy as np
 import itertools
 
@@ -28,6 +28,10 @@ class SegmentPlotWidget(QWidget):
         self.plotWidget.plotItem.addItem(self.hLine, ignoreBounds=True)
         self.plotWidget.plotItem.showGrid(True, True)
         self._hoverTolerance = (30,50) # how close in pixels mouse should be  to data to show values in label
+        
+        self._hoverLineWidth = 5
+        self._noHoverLineWidth = None
+        self._hoverLine = None
         
         self.plotWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         
@@ -62,13 +66,34 @@ class SegmentPlotWidget(QWidget):
     def setHoverLabel(self, x, y=None, channel=None):
         xunits = "seconds" if self.parent.sr is not None else "samples"
         if y is not None and channel is not None:
-            colour = self.plotWidget.plotItem.dataItems[channel].opts['pen']
+            colour = self._getPen(channel).color().name()
             self.plotLabel.setText(f'<span>{x:g} {xunits};</span> <span style="color:{colour}">{self.freqs[channel]:g}Hz: {y:g}</span>')
         else:
             self.plotLabel.setText(f'<span>{x:g} {xunits}</span>')
+        self.setHoverLine(channel)
+            
+    def setHoverLine(self, channel=None):
+        if self._hoverLine is not None:
+            self._setChannelPenWidth(self._hoverLine, self._noHoverLineWidth)
+        
+        if channel is not None:
+            self._noHoverLineWidth = self._getPen(channel).width()
+            self._setChannelPenWidth(channel, self._hoverLineWidth)
+        self._hoverLine = channel
             
     def __getattr__(self, name):
         return getattr(self.plotWidget, name)
+    
+    def _getPen(self, channel):
+        pen = self.plotWidget.plotItem.dataItems[channel].opts['pen']
+        if not isinstance(pen, QPen):
+            pen = mkPen(pen)
+        return pen
+    
+    def _setChannelPenWidth(self, channel, width):
+        pen = self._getPen(channel)
+        pen.setWidth(width)
+        self.plotWidget.plotItem.dataItems[channel].setPen(pen)
     
 class PlotPage(QWidget):
     def __init__(self):

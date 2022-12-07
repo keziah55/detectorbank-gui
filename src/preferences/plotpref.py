@@ -14,6 +14,7 @@ class PlotPreferences(QWidget):
         
         hopfGroup = GroupBox("Output", layout="form")
         self.downsampleBox = QSpinBox()
+        self.downsampleBox.setMaximum(2**32//2-1) # essentially no max
         self.downsampleBox.setToolTip("Factor by which to downsample the results when plotting")
         hopfGroup.addRow("Downsample factor: ", self.downsampleBox)
         
