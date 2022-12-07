@@ -64,19 +64,27 @@ class SegmentPlotWidget(QWidget):
                 self.setHoverLabel(xData[idx])
             
     def setHoverLabel(self, x, y=None, channel=None):
+        """ Set label which values under mouse.
+        
+            Also highlights current line, if `channel` is not None.
+        """
         xunits = "seconds" if self.parent.sr is not None else "samples"
         if y is not None and channel is not None:
             colour = self._getPen(channel).color().name()
             self.plotLabel.setText(f'<span>{x:g} {xunits};</span> <span style="color:{colour}">{self.freqs[channel]:g}Hz: {y:g}</span>')
         else:
             self.plotLabel.setText(f'<span>{x:g} {xunits}</span>')
-        self.setHoverLine(channel)
+        self.setHighlightLine(channel)
             
-    def setHoverLine(self, channel=None):
+    def setHighlightLine(self, channel=None):
+        """ Change the width of line at index `channel` """
+        # TODO this causes plot to re-autoscale which is annoying
         if self._hoverLine is not None:
+            # reset any previously highlighted line
             self._setChannelPenWidth(self._hoverLine, self._noHoverLineWidth)
         
         if channel is not None:
+            # highlight current line
             self._noHoverLineWidth = self._getPen(channel).width()
             self._setChannelPenWidth(channel, self._hoverLineWidth)
         self._hoverLine = channel
@@ -85,6 +93,7 @@ class SegmentPlotWidget(QWidget):
         return getattr(self.plotWidget, name)
     
     def _getPen(self, channel):
+        """ Return pen of line at index `channel` """
         pen = self.plotWidget.plotItem.dataItems[channel].opts['pen']
         if not isinstance(pen, QPen):
             pen = mkPen(pen)
