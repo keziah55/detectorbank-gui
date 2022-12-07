@@ -6,7 +6,7 @@ Display multiple output plots
 from pyqtgraph import PlotWidget, InfiniteLine
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QToolBar, QSpinBox, 
                             QStackedWidget, QGridLayout)
-from qtpy.QtCore import Qt, Slot, QTimer
+from qtpy.QtCore import Qt, Slot, QTimer, QPointF
 from qtpy.QtGui import QIcon
 import numpy as np
 import itertools
@@ -27,6 +27,7 @@ class SegmentPlotWidget(QWidget):
         self.plotWidget.plotItem.addItem(self.vLine, ignoreBounds=True)
         self.plotWidget.plotItem.addItem(self.hLine, ignoreBounds=True)
         self.plotWidget.plotItem.showGrid(True, True)
+        self._hoverTolerance = (30,50) # how close in pixels mouse should be  to data to show values in label
         
         self.plotWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         
@@ -49,14 +50,22 @@ class SegmentPlotWidget(QWidget):
             
             yData = np.array([item._dataset.y[idx] for item in self.plotWidget.plotItem.dataItems])
             channel = np.abs(yData-mousePoint.y()).argmin()
-            # TODO define max distance that still counts
+
+            # only set values if mouse is close enough to data points       
+            dataPos = self.plotWidget.plotItem.vb.mapViewToScene(QPointF(xData[idx], yData[channel]))
+            diff = dataPos - pos
+            if abs(diff.x()) <= self._hoverTolerance[0] and abs(diff.y()) <= self._hoverTolerance[1]:
+                self.setHoverLabel(xData[idx], yData[channel], channel)
+            else:
+                self.setHoverLabel(xData[idx])
             
-            self.setHoverLabel(xData[idx], yData[channel], channel)
-            
-    def setHoverLabel(self, x, y, channel):
+    def setHoverLabel(self, x, y=None, channel=None):
         xunits = "seconds" if self.parent.sr is not None else "samples"
-        colour = self.plotWidget.plotItem.dataItems[channel].opts['pen']
-        self.plotLabel.setText(f'<span>{x:g} {xunits};</span> <span style="color:{colour}">{self.freqs[channel]:g}Hz: {y:g}</span>')
+        if y is not None and channel is not None:
+            colour = self.plotWidget.plotItem.dataItems[channel].opts['pen']
+            self.plotLabel.setText(f'<span>{x:g} {xunits};</span> <span style="color:{colour}">{self.freqs[channel]:g}Hz: {y:g}</span>')
+        else:
+            self.plotLabel.setText(f'<span>{x:g} {xunits}</span>')
             
     def __getattr__(self, name):
         return getattr(self.plotWidget, name)
