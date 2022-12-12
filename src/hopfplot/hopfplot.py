@@ -78,7 +78,8 @@ class SegmentPlotWidget(QWidget):
             
     def setHighlightLine(self, channel=None):
         """ Change the width of line at index `channel` """
-        # TODO this causes plot to re-autoscale which is annoying
+        # changing pen width slightly changes autoscale range, so disable it
+        self.plotWidget.plotItem.vb.enableAutoRange(enable=False) 
         if self._hoverLine is not None:
             # reset any previously highlighted line
             self._setChannelPenWidth(self._hoverLine, self._noHoverLineWidth)
