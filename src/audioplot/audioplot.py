@@ -4,9 +4,10 @@
 Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
-from qtpy.QtCore import Signal, Slot, Qt, QObject, QThread
+from qtpy.QtCore import Signal, Slot, Qt, QObject, QThread, QBuffer, QIODevice
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel
 from qtpy.QtGui import QCursor
+from qtpy.QtMultimedia import QAudioOutput, QAudioFormat
 from .segmentlist import SegmentList
 
 import numpy as np
