@@ -93,7 +93,7 @@ class ArgsWidget(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)
@@ -164,6 +164,7 @@ class _AbsZArgsWidget(QWidget):
         
         self._ignoreValueChanged = False
         self._profile = None
+        self.currentProfileAltered = False
         self.loadProfileButton.clicked.connect(self.loadProfile)
         self.saveProfileButton.clicked.connect(self.saveProfile)
         
@@ -174,8 +175,8 @@ class _AbsZArgsWidget(QWidget):
             profileGroup.addWidget(button)
             
         layout = QVBoxLayout()
-        layout.addLayout(form)
         layout.addWidget(profileGroup)
+        layout.addLayout(form)
         
         layout.addWidget(self.restoreDefaultsButton)
             
@@ -191,13 +192,17 @@ class _AbsZArgsWidget(QWidget):
     def currentProfile(self, name):
         self._profile = name
         if name is not None:
+            self.currentProfileAltered = False
             self.currentProfileLabel.setName(name)
         else:
+            print(f"set currentProfile to {name}; calling currentProfileLabel.profileAltered")
+            self.currentProfileAltered = True
             self.currentProfileLabel.profileAltered()
         
     @Slot()
     def _valueChanged(self):
         if not self._ignoreValueChanged:
+            self.currentProfileAltered = True
             self.currentProfileLabel.profileAltered()
         
     def loadProfile(self):

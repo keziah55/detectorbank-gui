@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QWidget, QVBoxLayout
+from qtpy.QtWidgets import QWidget, QVBoxLayout, QSpinBox
 from customQObjects.widgets import GroupBox
 from customQObjects.core import Settings
 
@@ -12,7 +12,11 @@ class PlotPreferences(QWidget):
         
         audioGroup = GroupBox("Audio input")
         
-        hopfGroup = GroupBox("Output")
+        hopfGroup = GroupBox("Output", layout="form")
+        self.downsampleBox = QSpinBox()
+        self.downsampleBox.setMaximum(2**32//2-1) # essentially no max
+        self.downsampleBox.setToolTip("Factor by which to downsample the results when plotting")
+        hopfGroup.addRow("Downsample factor: ", self.downsampleBox)
         
         layout = QVBoxLayout()
         layout.addWidget(audioGroup)
@@ -23,11 +27,16 @@ class PlotPreferences(QWidget):
         self.apply()
         
     def setCurrentValues(self):
-        pass
-        # self.settings = Settings()
-        # self.settings.beginGroup("params/profiles")
+        settings = Settings()
+        settings.beginGroup(self.name.lower())
         
-        # self.settings.endGroup()
+        downsample = settings.value("downsample", cast=int, defaultValue=10)
+        self.downsampleBox.setValue(downsample)
+        
+        settings.endGroup()
         
     def apply(self):
-        pass
+        settings = Settings()
+        settings.beginGroup(self.name.lower())
+        settings.setValue("downsample", self.downsampleBox.value())
+        settings.endGroup()
