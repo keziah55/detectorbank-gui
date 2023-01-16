@@ -169,9 +169,9 @@ class DBGui(QMainWindow):
         
         self.analysers = [] 
         segments = self.audioplot.getSegments()
-        self.hopfplot.addPlots(params['detChars'][:,0], segments)
+        idxx = self.hopfplot.addPlots(params['detChars'][:,0], segments)
         numSamples = 0
-        for idx, segment in enumerate(segments):
+        for idx, segment in zip(idxx, segments):
             n0, n1 = segment.samples
             numSamples += (n1-n0)
             
