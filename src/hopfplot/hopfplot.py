@@ -12,6 +12,7 @@ import numpy as np
 import itertools
 
 class SegmentPlotWidget(QWidget):
+    """ PlotWidget with label and crosshairs """
     def __init__(self, parent, *args, freqs=None, segment=None, **kwargs):
         super().__init__(parent)
         self.freqs = freqs
@@ -106,6 +107,7 @@ class SegmentPlotWidget(QWidget):
         self.plotWidget.plotItem.dataItems[channel].setPen(pen)
     
 class PlotPage(QWidget):
+    """ Widget with grid layout of plots to be used as QStackedWidget page """
     def __init__(self):
         super().__init__()
         self.layout = QGridLayout()
