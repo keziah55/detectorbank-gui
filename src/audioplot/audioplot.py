@@ -4,80 +4,16 @@
 Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
-from qtpy.QtCore import Signal, Slot, Qt, QObject, QThread, QBuffer, QIODevice
+from qtpy.QtCore import Signal, Slot, Qt, QBuffer, QByteArray, QIODevice
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel
 from qtpy.QtGui import QCursor
-from qtpy.QtMultimedia import QAudioOutput, QAudioFormat
+from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
 from .segmentlist import SegmentList
 
 import numpy as np
 import itertools
 from dataclasses import dataclass
-from collections import deque, namedtuple
-import sounddevice as sd
-
-
-class AudioPlayWorker(QObject):
-    
-    stopped = Signal()
-    
-    stoppedManually = Signal()
-    
-    def __init__(self, audio=None, sr=None, bufSize=4800):
-        super().__init__()
-        self.audio = audio
-        self.sr = sr
         
-        self._fadeSize = 10 # number of samples over which to fade in and out
-        self._bufSize = bufSize # buffer size in samples
-        
-        self.setParams(audio, sr)
-        
-        self.cancelled = False
-        
-    def setParams(self, audio=None, sr=None):
-        if audio is not None:
-            self.audio = audio
-        if sr is not None:
-            self.sr = sr
-            
-    def _makeEnvelope(self, size):
-        # envelope to fade buffers in and out
-        envelope = np.concatenate((
-            np.zeros(self._fadeSize, dtype=np.float32),
-            np.linspace(0, 1, num=self._fadeSize, dtype=np.float32),
-            np.ones(size-4*self._fadeSize, dtype=np.float32),
-            np.linspace(1, 0, num=self._fadeSize, dtype=np.float32),
-            np.zeros(self._fadeSize, dtype=np.float32)))
-        return envelope
-        
-    def play(self):
-        i = 0
-        while not self.cancelled:
-            audio = self.audio[i*self._bufSize:(i+1)*self._bufSize]
-            audio *= self._makeEnvelope(len(audio))
-            i += 1
-            sd.play(audio, self.sr, blocking=True)
-            if i*self._bufSize >= len(self.audio):
-                break
-        
-        # print("worker play")
-        # sd.play(self.audio, self.sr, blocking=True)
-        self.cancelled = False
-        self.stopped.emit()
-        
-    # def stop(self):
-    #     print("worker stop")
-    #     sd.stop()
-    #     print("worker stopped")
-    #     self.stoppedManually.emit()
-        
-    def stop(self):
-        print("set cancelled to True")
-        self.cancelled = True
-        
-PlayQueueItem = namedtuple("PlayAudio", ["segment", "audio", "sr"])
-
 @dataclass
 class Segment:
     """ Class to store start and stop values of a segment.
@@ -133,16 +69,13 @@ class AudioPlotWidget(QWidget):
         
         self.plotWidget.valuesUnderMouse.connect(self.setCrosshairLabel)
         
-        self._playQueue = deque()
-        self._playWorker = AudioPlayWorker()
-        
-        self._playThread = QThread()
-        self._playThread.setTerminationEnabled()
-        self._playWorker.moveToThread(self._playThread)
-        self._playThread.started.connect(self._playWorker.play)
-        self._playWorker.stopped.connect(self._playFinished)
-        self._playWorker.stoppedManually.connect(self._playThread.quit)
-        self._playThread.finished.connect(self._playFromQueue)
+        self.audioOutput = None
+        self.audioFormat = QAudioFormat()
+        self.audioFormat.setChannelCount(1)
+        self.audioFormat.setSampleType(QAudioFormat.Float)
+        self.audioFormat.setSampleSize(32)
+        self.audioFormat.setCodec("audio/pcm")
+        self.audioBuffer = QBuffer()
         
         self._playingSegment = None
         self.segmentList.requestPlaySegment.connect(self._requestPlaySegment)
@@ -171,6 +104,12 @@ class AudioPlotWidget(QWidget):
         self.plotWidget.setAudioData(audio, self.sr)
         self._max = len(audio)/self.sr
         self.segmentList.setMaximum(self._max)
+        
+        if self.audioOutput is not None:
+            self.audioOutput.stateChanged.disconnect()
+        self.audioFormat.setSampleRate(sr)
+        self.audioOutput = QAudioOutput(self.audioFormat, self)
+        self.audioOutput.stateChanged.connect(self._audioStateChanged)
         
     def addSegment(self, start=None, stop=None):
         """ Add segment in both plot and list. """
@@ -211,6 +150,7 @@ class AudioPlotWidget(QWidget):
             self.plotLabel.setText(f"{x:g} seconds; {int(x*self.sr)} samples")
         
     def _requestPlaySegment(self, segment):
+        """ Play audio in `segment` """
         if self.sr is None or self.audio is None:
             return None
         start, stop = [int(t*self.sr) for t in segment.values]
@@ -219,41 +159,30 @@ class AudioPlotWidget(QWidget):
         if stop >= len(self.audio):
             stop = len(self.audio) - 1
         audio = self.audio[start:stop]
-        playAudioInfo = PlayQueueItem(segment, audio, self.sr)
-        self._playQueue.append(playAudioInfo)
-        print(f"added {start/self.sr:g} to {stop/self.sr:g} to queue")
+        
         self._requestStopSegment()
         
-    def _playFromQueue(self):
-        print(f"thread running: {self._playThread.isRunning()}")
-        if len(self._playQueue) == 0:
-            print("nothing in queue")
-            return None
-        segment, audio, sr = self._playQueue.popleft()
-        print(f"about to play {segment.values[0]} to {segment.values[1]}")
-        print("playing")
+        data = QByteArray(audio.tobytes())
+        self.audioBuffer.setData(data)
+        self.audioBuffer.open(QIODevice.ReadOnly)
+        self.audioBuffer.seek(0)
+        
         self._playingSegment = segment
-        self._playWorker.setParams(audio, sr)
-        self._playThread.start()
-        
+        self.audioOutput.start(self.audioBuffer)
+                
     def _requestStopSegment(self):
-        import inspect; print(f"_requestStopSegment called by {inspect.stack()[1].function}; thread running: {self._playThread.isRunning()}")
-        self.segmentList.stopSegment(self._playingSegment)
-        if self._playThread.isRunning():
-            print("thread is running")
-            self._playWorker.stop()
-            self._playThread.quit()
-            # self._playThread.wait()
-            # print("wait returned")
-        else:
-            self._playFromQueue()
+        """ Stop any playing audio """
+        if self.audioOutput.state() == QAudio.ActiveState:
+            self.audioOutput.stop()
+        if self.audioBuffer.isOpen():
+            self.audioBuffer.close()
             
-    def _playFinished(self):
-        self.segmentList.stopSegment(self._playingSegment)
-        self._playingSegment = None
-        self._playThread.quit()
-        print(f"play finished normally; thread running: {self._playThread.isRunning()}")
-        
+    def _audioStateChanged(self, state):
+        # update SegmentWidget button icon
+        if state == QAudio.ActiveState:
+            self._playingSegment.playing = True
+        else:
+            self._playingSegment.playing = False
         
 class AudioPlot(PlotWidget):
     

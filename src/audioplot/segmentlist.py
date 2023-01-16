@@ -44,10 +44,14 @@ class _SegmentList(GroupBox):
     requestPlaySegment = Signal(object)
     """ **signal** requestPlaySegment(SegmentWidget `segment`) 
     
-        Emitted when user requests segment be played.
+        From SegmentWidget
     """
     
     requestStopSegment = Signal()
+    """ **signal** requestStopSegment() 
+    
+        From SegmentWidget
+    """
     
     def __init__(self, parent=None, defaultMin=None, defaultMax=None):
         super().__init__(parent=parent, title="Segments", layout="vbox")
@@ -98,7 +102,7 @@ class _SegmentList(GroupBox):
         
         segment.startValueChanged.connect(lambda value: self._segmentRangeChanged(segment, value, None))
         segment.stopValueChanged.connect(lambda value: self._segmentRangeChanged(segment, None, value))
-        segment.requestPlaySegment.connect(self._requestPlaySegment)
+        segment.requestPlaySegment.connect(self.requestPlaySegment)
         segment.requestStopSegment.connect(self.requestStopSegment)
         
         if row > 1:
@@ -160,18 +164,3 @@ class _SegmentList(GroupBox):
     def _clearSegments(self):
         for row in reversed(range(1, self.layout.rowCount())-1):
             self.removeSegment(row)
-            
-    def _requestPlaySegment(self, requestSegment):
-        print(f"_requestPlaySegment {requestSegment.values}")
-        for segment in self._segments:
-            # if another segment is currently playing, stop it
-            if requestSegment!= segment and segment.playing:
-                print(f"_requestPlaySegment stopping segment {segment.values}")
-                segment.playStopSegment(play=False)
-        self.requestPlaySegment.emit(requestSegment)
-        
-    def stopSegment(self, segment=None):
-        if segment is None:
-            return
-        else:
-            segment.playStopSegment(play=False)

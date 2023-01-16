@@ -32,17 +32,18 @@ class SegmentWidget(QWidget):
     requestPlaySegment = Signal(object)
     """ **signal** requestPlaySegment(SegmentWidget `self`) 
     
-        Emitted when user requests segment be played, with the reference to this segment.
+        Emitted when play button is clicked, with the reference to this segment.
     """
     
     requestStopSegment = Signal()
+    """ **signal** requestStopSegment() 
+    
+        Emitted when stop button is clicked.
+    """
     
     def __init__(self, start=None, stop=None, minimum=None, maximum=None, colour=None):
         super().__init__()
         
-        # if (icon := QIcon.fromTheme('media-playback-start')) is not None:
-        #     self.playButton = QPushButton(icon, "")
-        # else:
         self.playButton = QPushButton()
         self.startbox = QDoubleSpinBox()
         self.stopbox = QDoubleSpinBox()
@@ -68,7 +69,7 @@ class SegmentWidget(QWidget):
             
         self.startbox.valueChanged.connect(self._startChanged)
         self.stopbox.valueChanged.connect(self._stopChanged)
-        self.playButton.clicked.connect(lambda *args: self.playStopSegment(emit=True))
+        self.playButton.clicked.connect(lambda *args: self._playStopSegment())
         
         self.playing = False
         
@@ -133,9 +134,17 @@ class SegmentWidget(QWidget):
         return self._playing 
     
     @playing.setter
-    def playing(self, isPlaying):
-        self._playing = isPlaying
-        if self._playing is False:
+    def playing(self, playing):
+        # set _playing and update button icon
+        self._playing = playing
+        state = "start" if self._playing is False else "stop"
+        self._setButtonState(state)
+                
+    def _setButtonState(self, state):
+        """ Set button icon or text """
+        if state not in ["start", "stop"]:
+            raise ValueError("Play button state must be 'start' or 'stop'")
+        if state == "start":
             if (icon := QIcon.fromTheme('media-playback-start')) is not None:
                 self.playButton.setIcon(icon)
             else:
@@ -146,20 +155,13 @@ class SegmentWidget(QWidget):
             else:
                 self.playButton.setText("Stop")
         
-    def playStopSegment(self, play=None, emit=False):
-        """ Emit :attr:`requestPlaySegment`. """
-        import inspect; print(f"playStopSegment called by {inspect.stack()[1].function}; {play=}; {emit=}")
+    def _playStopSegment(self, play=None):
+        """ Emit :attr:`requestPlaySegment` or :attr:`requestStopSegment`. """
         if play is None:
-            self.playing = not self.playing
-        elif self.playing == play: # nothing to be done
-            return None
+            play = not self.playing
+        if play:
+            self.requestPlaySegment.emit(self)
         else:
-            self.playing = play
-        print(f"{self.values} playStopSegment set playing to {self.playing}")
-        if emit:
-            if self.playing:
-                self.requestPlaySegment.emit(self)
-            else:
-                self.requestStopSegment.emit()
-        
+            self.requestStopSegment.emit()
+    
         
