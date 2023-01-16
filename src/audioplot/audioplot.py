@@ -42,6 +42,7 @@ class Segment:
         return (self.start, self.stop)
 
 class AudioPlotWidget(QWidget):
+    """ Widget to display audio plot and segment list and keep them synchronised """
     
     statusMessage = Signal(str)
     """ **signal** statusMessage(str `msg`)
@@ -53,10 +54,7 @@ class AudioPlotWidget(QWidget):
         
         super().__init__(parent=parent)
         
-        alpha = "32"
-        colours = ["#0000ff", "#ff0000", "#00ff00", "#ffe523", "#ed21ff", 
-                   "#ff672b", "#9718ff", "#00ffaa"]
-        self._segmentColours = itertools.cycle([mkColor(f"{colour}{alpha}") for colour in colours])
+        self._makeColourIter()
         
         self.plotLabel = QLabel(self)
         self.plotWidget = AudioPlot(self)
@@ -64,6 +62,7 @@ class AudioPlotWidget(QWidget):
         
         self.segmentList.requestAddSegment.connect(self.addSegment)
         self.segmentList.requestRemoveSegment.connect(self.removeSegment)
+        self.segmentList.requestRemoveAllSegments.connect(self.removeAllSegments)
         self.segmentList.requestSetSegmentRange.connect(self.setSegmentRange)
         self.plotWidget.requestAddSegment.connect(self.addSegment)
         self.plotWidget.requestRemoveSegment.connect(self.removeSegment)
@@ -137,6 +136,12 @@ class AudioPlotWidget(QWidget):
         self.segmentList.removeSegment(idx)
         self.statusMessage.emit("Segment removed")
         
+    def removeAllSegments(self):
+        for idx in reversed(range(len(self.segmentList))):
+            self.removeSegment(idx)
+        self._makeColourIter()
+        self.addSegment(start=0, stop=self._max)
+        
     def setSegmentRange(self, idx, start=None, stop=None):
         """ Update range of segment `idx` in both plot and list. """
         self.plotWidget.setSegmentRange(idx, start=start, stop=stop)
@@ -185,6 +190,12 @@ class AudioPlotWidget(QWidget):
             self._playingSegment.playing = True
         else:
             self._playingSegment.playing = False
+            
+    def _makeColourIter(self):
+        alpha = "32"
+        colours = ["#0000ff", "#ff0000", "#00ff00", "#ffe523", "#ed21ff", 
+                   "#ff672b", "#9718ff", "#00ffaa"]
+        self._segmentColours = itertools.cycle([mkColor(f"{colour}{alpha}") for colour in colours])
         
 class AudioPlot(PlotWidget):
     

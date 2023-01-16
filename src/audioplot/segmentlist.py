@@ -3,7 +3,7 @@
 """
 QScrollArea where :class:`SegmentWidgets` can be added or removed.
 """
-from qtpy.QtWidgets import QPushButton, QScrollArea, QSizePolicy
+from qtpy.QtWidgets import QPushButton, QScrollArea, QSizePolicy, QHBoxLayout
 from qtpy.QtCore import Signal,  Qt, QSize
 from qtpy.QtGui import QIcon
 from customQObjects.widgets import GroupBox
@@ -20,6 +20,10 @@ class SegmentList(QScrollArea):
         
     def __getattr__(self, name):
         return getattr(self.widget, name)
+    
+    def __len__(self):
+        return len(self.widget)
+        
 
 class _SegmentList(GroupBox):
     
@@ -34,6 +38,8 @@ class _SegmentList(GroupBox):
     
         Emitted when SegmentWidget removed.
     """
+    
+    requestRemoveAllSegments = Signal()
     
     requestSetSegmentRange = Signal(int, object, object)
     """ **signal** requestSetSegmentRange(int `index`, float `min`, float `max`) 
@@ -65,16 +71,29 @@ class _SegmentList(GroupBox):
             self.addButton = QPushButton("Add")
         self.addButton.setToolTip("Add new segment")
         
+        if (icon := QIcon.fromTheme('list-remove')) is not None:
+            self.removeAllButton = QPushButton(icon, "")
+        else:
+            self.removeAllButton = QPushButton("Remove all")
+        self.removeAllButton.setToolTip("Remove all segments")
+        
         # maintain list of segments so we can emit correct index with signals
         # (layout count can be unreliable when widgets have been removed)
         self._segments = [] 
-            
-        # self.layout = QVBoxLayout()
-        self.layout.addWidget(self.addButton)
+        
+        buttonLayout = QHBoxLayout()
+        for button in [self.addButton, self.removeAllButton]:
+            buttonLayout.addWidget(button)
+        # self.layout.addWidget(self.addButton)
+        self.layout.addLayout(buttonLayout)
         self.layout.addStretch()
         # self.setLayout(self.layout)
         
         self.addButton.clicked.connect(self.requestAddSegment)
+        self.removeAllButton.clicked.connect(self.requestRemoveAllSegments)
+        
+    def __len__(self):
+        return len(self._segments)
         
     def sizeHint(self):
         if self.layout.count() > 3:
