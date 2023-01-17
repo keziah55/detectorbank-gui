@@ -3,11 +3,13 @@
 """
 Display multiple output plots
 """
-from pyqtgraph import PlotWidget, InfiniteLine, mkPen
+from pyqtgraph import PlotWidget, InfiniteLine, mkPen, LegendItem, PlotDataItem
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QToolBar, QSpinBox, 
-                            QStackedWidget, QGridLayout)
-from qtpy.QtCore import Qt, Slot, QTimer, QPointF
+                            QStackedWidget, QGridLayout, QSizePolicy,
+                            QGraphicsView, QGraphicsScene)
+from qtpy.QtCore import Slot, QPointF
 from qtpy.QtGui import QIcon, QPen
+from customQObjects.widgets import VSplitter
 import numpy as np
 import itertools
 
@@ -143,6 +145,29 @@ class PlotPage(QWidget):
                 col = 0
             return row, col
 
+class LegendWidget(QGraphicsView):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self._width = parent.size().width()
+        self._itemWidth = 180
+        self.legendItem = LegendItem()
+        self._scene = QGraphicsScene(parent=self)
+        self.setScene(self._scene)
+        self.scene().addItem(self.legendItem)
+        
+    def makeLegend(self, freqs, colours):
+        cols = self._width // self._itemWidth
+        self.legendItem.setColumnCount(cols)
+        for freq, colour in zip(freqs, itertools.cycle(colours)):
+            item = PlotDataItem(pen=colour)
+            label = f"{freq:g}Hz"
+            self.legendItem.addItem(item, label)
+            
+    def updateWidth(self, width):
+        self._width = width
+        cols = width // self._itemWidth
+        self.legendItem.setColumnCount(cols)
+        
 class HopfPlot(QWidget):
     """ Widget containing QStackedWidget of PlotPages """
     def __init__(self, parent, *args, sr=None, **kwargs):
@@ -151,7 +176,7 @@ class HopfPlot(QWidget):
         ## toolbar and pages ##
         self.toolbar = QToolBar()
         self.stack = QStackedWidget()
-        # TODO legend
+        self.legendWidget = LegendWidget(self)
         
         ## grid dimensions ##
         self.rowsBox = QSpinBox()
@@ -212,10 +237,23 @@ class HopfPlot(QWidget):
         
         self.page = 0
         
+        
+        self.stack.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.legendWidget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        
+        self._splitter = VSplitter()
+        self._splitter.addWidget(self.stack)
+        self._splitter.addWidget(self.legendWidget)
+        self._splitter.setStretchFactors([10,1])
+        self._splitter.setSizes([500,10])
+        
         layout = QVBoxLayout()
         layout.addWidget(self.toolbar)
-        layout.addWidget(self.stack)
+        layout.addWidget(self._splitter)
         self.setLayout(layout)
+        
+    def resizeEvent(self, event):
+        self.legendWidget.updateWidth(event.size().width())
         
     @property
     def page(self):
@@ -316,7 +354,7 @@ class HopfPlot(QWidget):
     def export(self):
         """ Export all plots """
         pass
-        
+    
     def addPlots(self, freqs, segments) -> list[int]:
         """ Create empty plots for the given segments, which will contain data for the given frequencies 
         
@@ -329,6 +367,9 @@ class HopfPlot(QWidget):
         else:
             page = self.stack.widget(self._pageCount-1)
             row, col = page.getNextRowCol()
+        
+        if len(self._plots) == 0:
+            self.legendWidget.makeLegend(freqs, self.colours)
         
         idx = []
         
