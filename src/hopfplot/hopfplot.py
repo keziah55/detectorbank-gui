@@ -6,7 +6,7 @@ Display multiple output plots
 from pyqtgraph import PlotWidget, InfiniteLine, mkPen, LegendItem, PlotDataItem
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QToolBar, QSpinBox, 
                             QStackedWidget, QGridLayout, QGraphicsView, QGraphicsScene)
-from qtpy.QtCore import Slot, QPointF
+from qtpy.QtCore import Signal, Slot, QPointF
 from qtpy.QtGui import QIcon, QPen
 from customQObjects.widgets import VSplitter
 import numpy as np
@@ -14,6 +14,9 @@ import itertools
 
 class SegmentPlotWidget(QWidget):
     """ PlotWidget with label and crosshairs """
+    
+    highlightChannel = Signal(object)
+    
     def __init__(self, parent, *args, freqs=None, segment=None, **kwargs):
         super().__init__(parent)
         self.freqs = freqs
@@ -91,6 +94,7 @@ class SegmentPlotWidget(QWidget):
             self._noHoverLineWidth = self._getPen(channel).width()
             self._setChannelPenWidth(channel, self._hoverLineWidth)
         self._hoverLine = channel
+        self.highlightChannel.emit(channel)
             
     def __getattr__(self, name):
         return getattr(self.plotWidget, name)
@@ -149,6 +153,7 @@ class LegendWidget(QGraphicsView):
         super().__init__(parent)
         self._width = parent.size().width()
         self._itemWidth = 180
+        self._highlighted = None
         self.legendItem = LegendItem()
         self._scene = QGraphicsScene(parent=self)
         self.setScene(self._scene)
@@ -162,10 +167,25 @@ class LegendWidget(QGraphicsView):
             label = f"{freq:g}Hz"
             self.legendItem.addItem(item, label)
             
+        self._labelItems = [self.legendItem.layout.itemAt(idx) 
+                            for idx in range(1, self.legendItem.layout.count(), 2)] # label is every second item in layout
+        self._labelColour = self._labelItems[0].opts['color']
+        self._labelItems = list(zip(self._labelItems, itertools.cycle(colours)))
+        
     def updateWidth(self, width):
         self._width = width
         cols = width // self._itemWidth
         self.legendItem.setColumnCount(cols)
+        
+    def highlightLabel(self, channel=None):
+        if self._highlighted is not None:
+            labelItem, _ = self._labelItems[self._highlighted]
+            labelItem.setText(labelItem.text, bold=False, color=self._labelColour)
+            
+        if channel is not None:
+            labelItem, colour = self._labelItems[channel]
+            labelItem.setText(labelItem.text, bold=True, color=colour)
+        self._highlighted = channel
         
 class HopfPlot(QWidget):
     """ Widget containing QStackedWidget of PlotPages """
@@ -386,6 +406,7 @@ class HopfPlot(QWidget):
                 title = f'<span style="color:{segment.colour}">{title}</span>'
                 
             p = SegmentPlotWidget(self, title=title, freqs=freqs, segment=segment)
+            p.highlightChannel.connect(self.legendWidget.highlightLabel)
             page.addPlot(p, row, col)
             idx.append(len(self._plots))
             self._plots.append(p)
