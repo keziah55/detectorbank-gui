@@ -5,8 +5,8 @@ Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
 from qtpy.QtCore import Signal, Slot, Qt, QBuffer, QByteArray, QIODevice
-from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel
-from qtpy.QtGui import QCursor
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel, QPushButton
+from qtpy.QtGui import QCursor, QIcon
 from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
 from .segmentlist import SegmentList
 
@@ -50,6 +50,8 @@ class AudioPlotWidget(QWidget):
         Emitted with a message for the status bar.
     """
     
+    requestSelectAudio = Signal()
+    
     def __init__(self, parent=None):
         
         super().__init__(parent=parent)
@@ -60,6 +62,13 @@ class AudioPlotWidget(QWidget):
         self.plotWidget = AudioPlot(self)
         self.segmentList = SegmentList(self)
         
+        self.openAudioButton = QPushButton(self)
+        if (icon := QIcon.fromTheme("audio-x-generic")) is not None:
+            self.openAudioButton.setIcon(icon)
+        else:
+            self.openAudioButton.setText("Select audio file")
+        self.openAudioButton.setToolTip("Select audio file to analyse")
+        
         self.segmentList.requestAddSegment.connect(self.addSegment)
         self.segmentList.requestRemoveSegment.connect(self.removeSegment)
         self.segmentList.requestRemoveAllSegments.connect(self.removeAllSegments)
@@ -69,6 +78,8 @@ class AudioPlotWidget(QWidget):
         self.plotWidget.requestSetSegmentRange.connect(self.setSegmentRange)
         
         self.plotWidget.valuesUnderMouse.connect(self.setCrosshairLabel)
+        
+        self.openAudioButton.clicked.connect(self.requestSelectAudio)
         
         self.audioOutput = None
         self.audioFormat = QAudioFormat()
@@ -86,12 +97,17 @@ class AudioPlotWidget(QWidget):
         plotLayout.addWidget(self.plotWidget)
         plotLayout.addWidget(self.plotLabel)
         
-        hbox = QHBoxLayout()
-        # hbox.addWidget(self.plotWidget)
-        hbox.addLayout(plotLayout)
-        hbox.addWidget(self.segmentList)
+        rightLayout = QVBoxLayout()
+        rightLayout.addWidget(self.openAudioButton)
+        rightLayout.addWidget(self.segmentList)
         
-        self.setLayout(hbox)
+        layout = QHBoxLayout()
+        # layout.addWidget(self.plotWidget)
+        layout.addLayout(plotLayout)
+        # layout.addWidget(self.segmentList)
+        layout.addLayout(rightLayout)
+        
+        self.setLayout(layout)
         
         self.audio = None
         self.sr = None

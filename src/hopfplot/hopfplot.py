@@ -5,8 +5,7 @@ Display multiple output plots
 """
 from pyqtgraph import PlotWidget, InfiniteLine, mkPen, LegendItem, PlotDataItem
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QToolBar, QSpinBox, 
-                            QStackedWidget, QGridLayout, QSizePolicy,
-                            QGraphicsView, QGraphicsScene)
+                            QStackedWidget, QGridLayout, QGraphicsView, QGraphicsScene)
 from qtpy.QtCore import Slot, QPointF
 from qtpy.QtGui import QIcon, QPen
 from customQObjects.widgets import VSplitter
@@ -188,6 +187,8 @@ class HopfPlot(QWidget):
         self.rowsBox.setMinimum(1)
         self.colsBox.setMinimum(1)
         
+        self.toolbar.addAction(parent.analyseAction)
+        self.toolbar.addSeparator()
         self.toolbar.addWidget(self.rowsBox)
         self.toolbar.addWidget(self.colsBox)
         self.applyGridAction = self.toolbar.addAction("Apply")
@@ -236,10 +237,6 @@ class HopfPlot(QWidget):
         self._plots = []
         
         self.page = 0
-        
-        
-        self.stack.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        self.legendWidget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         
         self._splitter = VSplitter()
         self._splitter.addWidget(self.stack)

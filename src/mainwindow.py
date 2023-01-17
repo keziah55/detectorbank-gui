@@ -29,15 +29,15 @@ class DBGui(QMainWindow):
     def __init__(self, *args, audioFile=None, profile=None, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.audioplot = AudioPlotWidget(self)
-        self.argswidget = ArgsWidget(self)
-        self.hopfplot = HopfPlot(self)
-        
         self.prefDialog = PreferencesDialog(self)
-
+        
         self._createActions()
         self._createToolBars()
         self._createMenus()
+        
+        self.audioplot = AudioPlotWidget(self)
+        self.argswidget = ArgsWidget(self)
+        self.hopfplot = HopfPlot(self)
         
         self.statusBar()
         self._statusTimeout = 1500
@@ -47,6 +47,7 @@ class DBGui(QMainWindow):
         self._progressQueue = deque()
         
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
+        self.audioplot.requestSelectAudio.connect(self._openAudioFile)
         
         widgets = {"audioinput":('Audio Input', self.audioplot, 'left', 'input'),
                    "args":('Parameters',self.argswidget, 'left', 'input'),
@@ -276,17 +277,17 @@ class DBGui(QMainWindow):
         self.viewToolBar = QToolBar("View")
         self.viewToolBar.setObjectName("View")
         self._viewTabs = QTabBar()
-        for label in ["All", "Output"]:
+        for label in ["All"]:#, "Output"]:
             idx = self._viewTabs.addTab(label)
             self._viewTabs.setTabToolTip(idx, f"Show {label.lower()} widgets")
         self._viewTabs.currentChanged.connect(self._viewTabChanged)
         self.viewToolBar.addWidget(self._viewTabs)
-        self.addToolBar(self.viewToolBar)
+        # self.addToolBar(self.viewToolBar)
         
-        self.runToolBar = self.addToolBar("Run")
-        self.runToolBar.setObjectName("Run")
-        self.runToolBar.addAction(self.openAudioFileAction)
-        self.runToolBar.addAction(self.analyseAction)
+        # self.runToolBar = self.addToolBar("Run")
+        # self.runToolBar.setObjectName("Run")
+        # self.runToolBar.addAction(self.openAudioFileAction)
+        # self.runToolBar.addAction(self.analyseAction)
         
     def _createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
