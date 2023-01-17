@@ -28,7 +28,6 @@ class Segment:
     stop: float
     sr: int
     colour: str = None
-    graphicsItem: LinearRegionItem = None
     id: UUID = field(default_factory=uuid4)
     
     @property
@@ -133,7 +132,7 @@ class AudioPlotWidget(QWidget):
         colour = next(self._segmentColours)
         if start is None and len(self.plotWidget._segments) > 0:
             # use time of last segment as start of new segment
-            start = max([segment.graphicsItem.getRegion()[1] for segment in self.plotWidget._segments])
+            start = max([segment.getRegion()[1] for segment in self.plotWidget._segments])
             if start > self._max:
                 start = self._max
         if stop is None:
@@ -269,21 +268,20 @@ class AudioPlot(PlotWidget):
     @property
     def segments(self) -> list[Segment]:
         """ Return list of SegmentRanges """
-        return self._segments
+        segs = sorted(self._segments, key=lambda seg: seg.getRegion()[0])
+        segs = [Segment(*segment.getRegion(), self.sr, segment.brush.color().name()) 
+                for idx, segment in enumerate(segs)]
+        return segs
     
     def setAudioData(self, data, sr):
         """ Plot `data`, with sample rate `sr`. """
         for dataitem in self.plotItem.listDataItems():
             self.plotItem.removeItem(dataitem)
-            
-        # self._removeAllSegments()
-            
         self.sr = sr
         x = np.linspace(0, len(data)/sr, len(data))
         self.plot(x, data)
-        # self.addSegment(0, len(data)/sr)
         self._segments[0].sr = sr
-        self._segments[0].graphicsItem.setRegion((0, len(data)/sr))
+        self._segments[0].setRegion((0, len(data)/sr))
         
     def addSegment(self, start=None, stop=None, colour=None):
         """ Add a new segment selection, optionally supplying range. """
@@ -291,24 +289,17 @@ class AudioPlot(PlotWidget):
         self._setSegmentRange(segment, start, stop)
         self.plotItem.addItem(segment)
         segment.sigRegionChangeFinished.connect(self._emitSetSegmentRange)
-        seg = Segment(*segment.getRegion(), self.sr, segment.brush.color().name(), segment)
-        self._segments.append(seg)
+        self._segments.append(segment)
         
     def removeSegment(self, idx):
         """ Remove segment at index `idx`. """
         segment = self._segments.pop(idx)
-        self.plotItem.removeItem(segment.graphicsItem)
+        self.plotItem.removeItem(segment)
         
     def _emitSetSegmentRange(self, segment):
         """ Find `segment` in list and emit :attr:`requestSetSegmentRange` """
+        idx = self._segments.index(segment)
         start, stop = segment.getRegion()
-        idx = 0
-        while True:
-            if idx >= len(self._segments):
-                raise RuntimeError("Cannot find segment graphics item in list")
-            if self._segments[idx].graphicsItem == segment:
-                break
-            idx += 1
         self.requestSetSegmentRange.emit(idx, start, stop)
         
     def _setSegmentRange(self, segment, start=None, stop=None):
@@ -321,7 +312,7 @@ class AudioPlot(PlotWidget):
     def setSegmentRange(self, idx, start=None, stop=None):
         """ Update range of segment `idx` """
         segment = self._segments[idx]
-        self._setSegmentRange(segment.graphicsItem, start, stop)
+        self._setSegmentRange(segment, start, stop)
         
     def contextMenuEvent(self, event):
         self._contextMenuPos = event.pos()

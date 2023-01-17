@@ -24,7 +24,6 @@ class SegmentList(QScrollArea):
     def __len__(self):
         return len(self.widget)
         
-
 class _SegmentList(GroupBox):
     
     requestAddSegment = Signal()
@@ -84,10 +83,8 @@ class _SegmentList(GroupBox):
         buttonLayout = QHBoxLayout()
         for button in [self.addButton, self.removeAllButton]:
             buttonLayout.addWidget(button)
-        # self.layout.addWidget(self.addButton)
         self.layout.addLayout(buttonLayout)
         self.layout.addStretch()
-        # self.setLayout(self.layout)
         
         self.addButton.clicked.connect(self.requestAddSegment)
         self.removeAllButton.clicked.connect(self.requestRemoveAllSegments)
