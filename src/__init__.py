@@ -1,3 +1,3 @@
-from .main import DBGui
+from .mainwindow import DBGui
 
 __all__ = ["DBGui"]
