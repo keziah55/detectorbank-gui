@@ -90,7 +90,7 @@ class AudioPlotWidget(QWidget):
             self.audioFormat.setSampleFormat(QAudioFormat.Float)
         except AttributeError:
             self.audioFormat.setSampleType(QAudioFormat.Float)
-        self.audioFormat.setSampleSize(32)
+            self.audioFormat.setSampleSize(32)
         self.audioFormat.setCodec("audio/pcm")
         self.audioBuffer = QBuffer()
         
