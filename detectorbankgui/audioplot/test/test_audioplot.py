@@ -142,3 +142,8 @@ class TestAudioPlot:
         assert segment.sr == self.sr
         assert abs(segment.samples[1] - len(self.audio)) <= self.atol*self.sr
         assert all(np.isclose((self.seglist._segments[0].values), [0,self.lenaudio], atol=self.atol))
+        
+    @pytest.mark.skip("test not written yet")
+    def test_add_remove_segments_graphically(self, setup, qtbot):
+        # test adding and removing via context menu (and delete key)
+        pass
