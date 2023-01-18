@@ -1,5 +1,22 @@
 #!/bin/bash
 
+if [ -z "$PYTHON_VERSION" ]; then 
+    pythonVersion=`python3 -c "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}')"`
+else
+    pythonVersion="$PYTHON_VERSION"
+fi
+
+if [ -z "$DETBANKDIR" ]; then
+    detBankDir="/usr/local/lib/python$pythonVersion/dist-packages"
+else
+    detBankDir="$DETBANKDIR"
+fi
+
+echo $pythonVersion
+echo $detBankDir
+
+export PYTHONPATH=$detBankDir:$PYTHONPATH
+
 origDir="$PWD"
 testDir="../detectorbank-gui-test"
 resultsDir="results"
@@ -17,17 +34,17 @@ else
 fi
 
 cd $testDir
-
 echo "cd $testDir"
 
 git clone git@github.com:keziah55/detectorbank-gui.git
 
-# make venv in detectorbank-gui-test, detectorbank-gui, because pytest was picking up
+# make venv in detectorbank-gui-test, not detectorbank-gui, because pytest was picking up
 # conftest.py files from modules installed in the venv (e.g. numpy)
 python3 -m venv .
 
 cd detectorbank-gui
 echo "cd detectorbank-gui"
+echo $PWD
 
 ../bin/python -m pip -V
 
