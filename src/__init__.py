@@ -1,3 +1,3 @@
-from .mainwindow import DBGui
+from .mainwindow import DetectorBankBGui
 
-__all__ = ["DBGui"]
+__all__ = ["DetectorBankBGui"]

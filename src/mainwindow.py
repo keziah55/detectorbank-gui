@@ -21,7 +21,7 @@ from collections import deque, namedtuple
 SegmentAnalysis = namedtuple("SegmentAnalysis", ["segement", "analyser"])
 WidgetView = namedtuple("WidgetView", ["dockwidget", "viewmode"])
 
-class DBGui(QMainWindow):
+class DetectorBankBGui(QMainWindow):
     
     dockAreas = {'left':Qt.LeftDockWidgetArea, 'right':Qt.RightDockWidgetArea,
                  'top':Qt.TopDockWidgetArea, 'bottom':Qt.BottomDockWidgetArea}
