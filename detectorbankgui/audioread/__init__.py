@@ -21,6 +21,7 @@ def read_audio(fname, *args, **kwargs) -> tuple[np.ndarray, int]:
         
         Additional args and kwargs will be passed to the `read` method.
     """
+    
     ret = read(fname, *args, **kwargs)
     if using_scipy:
         sr, audio = ret

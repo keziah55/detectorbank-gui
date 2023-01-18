@@ -6,7 +6,7 @@ DetectorBank GUI.
 import sys
 import argparse
 from qtpy.QtWidgets import QApplication
-from src.mainwindow import DetectorBankBGui
+from detectorbankgui.mainwindow import DetectorBankBGui
 
 if __name__ == '__main__':
     
