@@ -88,7 +88,7 @@ class AudioPlotWidget(QWidget):
         self.audioFormat = QAudioFormat()
         self.audioFormat.setChannelCount(1)
         # QAudioFormat API has changed between qt5 and qt6
-        if qtpy.__version__.split('.')[0] == '6':
+        if qtpy.QT_VERSION.split('.')[0] == '6':
             # pyside6 and pyqt6 handle sample format enum differently 
             # and this is not dealt with by qtpy
             try:
