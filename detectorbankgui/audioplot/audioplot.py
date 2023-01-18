@@ -86,7 +86,10 @@ class AudioPlotWidget(QWidget):
         self.audioOutput = None
         self.audioFormat = QAudioFormat()
         self.audioFormat.setChannelCount(1)
-        self.audioFormat.setSampleType(QAudioFormat.Float)
+        try:
+            self.audioFormat.setSampleFormat(QAudioFormat.Float)
+        except AttributeError:
+            self.audioFormat.setSampleType(QAudioFormat.Float)
         self.audioFormat.setSampleSize(32)
         self.audioFormat.setCodec("audio/pcm")
         self.audioBuffer = QBuffer()
