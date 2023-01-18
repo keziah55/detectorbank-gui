@@ -3,6 +3,9 @@ from qtpy.QtCore import Qt
 import pytest 
 import numpy as np
 
+import qtpy
+audioAvailable = True if qtpy.QT_VERSION.split('.')[0] == '5' else False
+
 pytest_plugin = "pytest-qt"
 
 class TestAudioPlot:
@@ -31,6 +34,8 @@ class TestAudioPlot:
         self.seglist = widget.segmentList
         
         self.atol = 0.01
+        
+        self.rmvButtonIndex = 3 if audioAvailable else 2
     
     def test_default_audioplot(self, setup_empty, qtbot):
 
@@ -92,7 +97,7 @@ class TestAudioPlot:
         
         # remove seg 1
         segwidget = self.seglist._segments[1]
-        button = segwidget.layout().itemAt(3).widget()
+        button = segwidget.layout().itemAt(self.rmvButtonIndex).widget()
         
         with qtbot.waitSignal(button.clicked):
             qtbot.mouseClick(button, Qt.LeftButton)
@@ -101,7 +106,7 @@ class TestAudioPlot:
         
         # remove final seg
         segwidget = self.seglist._segments[1]
-        button = segwidget.layout().itemAt(3).widget()
+        button = segwidget.layout().itemAt(self.rmvButtonIndex).widget()
         
         with qtbot.waitSignal(button.clicked):
             qtbot.mouseClick(button, Qt.LeftButton)
