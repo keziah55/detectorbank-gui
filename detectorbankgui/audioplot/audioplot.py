@@ -7,8 +7,10 @@ from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
 from qtpy.QtCore import Signal, Slot, Qt, QBuffer, QByteArray, QIODevice
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel, QPushButton
 from qtpy.QtGui import QCursor, QIcon
-from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
 import qtpy
+audioAvailable = True if qtpy.QT_VERSION.split('.')[0] == '5' else False
+if audioAvailable:
+    from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
 from .segmentlist import SegmentList
 
 import numpy as np
@@ -84,22 +86,24 @@ class AudioPlotWidget(QWidget):
         
         self.openAudioButton.clicked.connect(self.requestSelectAudio)
         
-        self.audioOutput = None
-        self.audioFormat = QAudioFormat()
-        self.audioFormat.setChannelCount(1)
-        # QAudioFormat API has changed between qt5 and qt6
-        if qtpy.QT_VERSION.split('.')[0] == '6':
-            # pyside6 and pyqt6 handle sample format enum differently 
-            # and this is not dealt with by qtpy
-            try:
-                self.audioFormat.setSampleFormat(QAudioFormat.Float) # pyside6
-            except AttributeError:
-                self.audioFormat.setSampleFormat(QAudioFormat.SampleFormat.Float) # pyqt6
-        else:
-            self.audioFormat.setSampleType(QAudioFormat.Float)
-            self.audioFormat.setSampleSize(32)
-            self.audioFormat.setCodec("audio/pcm")
-        self.audioBuffer = QBuffer()
+        # only allow playback in qt5
+        if audioAvailable:
+            self.audioOutput = None
+            self.audioFormat = QAudioFormat()
+            self.audioFormat.setChannelCount(1)
+            # QAudioFormat API has changed between qt5 and qt6
+            if qtpy.QT_VERSION.split('.')[0] == '6':
+                # pyside6 and pyqt6 handle sample format enum differently 
+                # and this is not dealt with by qtpy
+                try:
+                    self.audioFormat.setSampleFormat(QAudioFormat.Float) # pyside6
+                except AttributeError:
+                    self.audioFormat.setSampleFormat(QAudioFormat.SampleFormat.Float) # pyqt6
+            else:
+                self.audioFormat.setSampleType(QAudioFormat.Float)
+                self.audioFormat.setSampleSize(32)
+                self.audioFormat.setCodec("audio/pcm")
+            self.audioBuffer = QBuffer()
         
         self._playingSegment = None
         self.segmentList.requestPlaySegment.connect(self._requestPlaySegment)
@@ -134,11 +138,12 @@ class AudioPlotWidget(QWidget):
         self._max = len(audio)/self.sr
         self.segmentList.setMaximum(self._max)
         
-        if self.audioOutput is not None:
-            self.audioOutput.stateChanged.disconnect()
-        self.audioFormat.setSampleRate(sr)
-        self.audioOutput = QAudioOutput(self.audioFormat, self)
-        self.audioOutput.stateChanged.connect(self._audioStateChanged)
+        if audioAvailable:
+            if self.audioOutput is not None:
+                self.audioOutput.stateChanged.disconnect()
+            self.audioFormat.setSampleRate(sr)
+            self.audioOutput = QAudioOutput(self.audioFormat, self)
+            self.audioOutput.stateChanged.connect(self._audioStateChanged)
         
     def addSegment(self, start=None, stop=None):
         """ Add segment in both plot and list. """

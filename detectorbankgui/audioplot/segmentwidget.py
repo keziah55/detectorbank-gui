@@ -6,6 +6,8 @@ Widget managing two spin boxes, to set the start and stop points of a segment.
 from qtpy.QtWidgets import QHBoxLayout, QWidget, QDoubleSpinBox, QPushButton
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QPalette, QIcon
+import qtpy
+audioAvailable = True if qtpy.QT_VERSION.split('.')[0] == '5' else False
 
 class SegmentWidget(QWidget):
     """ Widget managing two spin boxes, to set the start and stop points of a segment.
@@ -69,12 +71,15 @@ class SegmentWidget(QWidget):
             
         self.startbox.valueChanged.connect(self._startChanged)
         self.stopbox.valueChanged.connect(self._stopChanged)
-        self.playButton.clicked.connect(lambda *args: self._playStopSegment())
+        
+        if audioAvailable:
+            self.playButton.clicked.connect(lambda *args: self._playStopSegment())
         
         self.playing = False
         
         layout = QHBoxLayout()
-        for widget in [self.playButton] + self.boxes:
+        widgets = [self.playButton] + self.boxes if audioAvailable else self.boxes
+        for widget in widgets:
             layout.addWidget(widget)
             
         self.setLayout(layout)
