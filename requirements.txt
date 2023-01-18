@@ -1,7 +1,7 @@
 numpy
 scipy
 soundfile
-BeautifulSoup
+beautifulsoup4
 qtpy
 PyQt5
 PySide2
