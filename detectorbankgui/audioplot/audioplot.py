@@ -8,6 +8,7 @@ from qtpy.QtCore import Signal, Slot, Qt, QBuffer, QByteArray, QIODevice
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel, QPushButton
 from qtpy.QtGui import QCursor, QIcon
 from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
+import qtpy
 from .segmentlist import SegmentList
 
 import numpy as np
@@ -86,9 +87,15 @@ class AudioPlotWidget(QWidget):
         self.audioOutput = None
         self.audioFormat = QAudioFormat()
         self.audioFormat.setChannelCount(1)
-        try:
-            self.audioFormat.setSampleFormat(QAudioFormat.Float)
-        except AttributeError:
+        # QAudioFormat API has changed between qt5 and qt6
+        if qtpy.__version__.split('.')[0] == '6':
+            # pyside6 and pyqt6 handle sample format enum differently 
+            # and this is not dealt with by qtpy
+            try:
+                self.audioFormat.setSampleFormat(QAudioFormat.Float) # pyside6
+            except AttributeError:
+                self.audioFormat.setSampleFormat(QAudioFormat.SampleFormat.Float) # pyqt6
+        else:
             self.audioFormat.setSampleType(QAudioFormat.Float)
             self.audioFormat.setSampleSize(32)
             self.audioFormat.setCodec("audio/pcm")
