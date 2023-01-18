@@ -111,7 +111,8 @@ class _SegmentList(GroupBox):
         if stop is None:
             stop = self._max
         
-        segment = SegmentWidget(start, stop, colour=colour)
+        segment = SegmentWidget(start, stop, colour=colour, minimum=self._min,
+                                maximum=self._max)
         self._segments.append(segment)
         segmentLayout = segment.layout()
         self.layout.insertWidget(row, segment)
@@ -138,16 +139,14 @@ class _SegmentList(GroupBox):
     def setMaximum(self, value):
         """ Set maximum value for all segments """
         self._max = value
-        for row in range(1, self.layout.count()):
-            if (widget := self.layout.itemAt(row).widget()) is not None:
-                widget.setMaximum(self._max)
+        for widget in self._segments:
+            widget.setMaximum(self._max)
             
     def setMinimum(self, value):
         """ Set minimum value for all segments """
         self._min = value
-        for row in range(1, self.layout.count()):
-            if (widget := self.layout.itemAt(row).widget()) is not None:
-                widget.setMinimum(self._min)
+        for widget in self._segments:
+            widget.setMaximum(self._min)
             
     def setSegmentRange(self, idx, start=None, stop=None):
         """ Set start/stop value of segment `idx` """

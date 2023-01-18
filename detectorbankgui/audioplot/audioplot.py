@@ -33,7 +33,10 @@ class Segment:
     @property
     def samples(self):
         """ Return tuple of start and stop times in samples """
-        return tuple([int(t*self.sr) for t in self.time])
+        if self.sr is not None:
+            return tuple([int(t*self.sr) for t in self.time])
+        else:
+            return None
     
     @property
     def time(self):
