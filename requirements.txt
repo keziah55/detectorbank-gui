@@ -2,6 +2,7 @@ numpy
 scipy
 soundfile
 beautifulsoup4
+lxml
 qtpy
 PyQt5
 PySide2
