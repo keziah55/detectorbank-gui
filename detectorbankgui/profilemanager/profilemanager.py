@@ -72,4 +72,8 @@ class ProfileManager:
         return [p['name'] for p in self.soup.find_all("profile")]
     
     def getProfile(self, name):
-        return Profile(self.soup.find("profile", attrs={'name':name}))
+        p = self.soup.find("profile", attrs={'name':name})
+        if p is not None:
+            return Profile(p)
+        else:
+            return None

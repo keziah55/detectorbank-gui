@@ -60,6 +60,7 @@ class FreqBwButton(ElideMixin, QPushButton):
     def setValue(self, detChars):
         self._dialog.setValues(detChars)
         self.setText(self._dialog.valuesStr)
+        self.valueChanged.emit()
     
     def _showDialog(self):
         reply = self._dialog.exec_()
@@ -224,16 +225,17 @@ class _AbsZArgsWidget(QWidget):
         self.currentProfile = profile
         
         prof = ProfileManager().getProfile(profile)
-        keys = ["sr", "damping", "gain", "numThreads", "detChars"]
-        params = {key:prof.value(key) for key in keys}
-        method, freqNorm, ampNorm = prof.value("features")
-        params["method"] = method,
-        params["freqNorm"] = freqNorm,
-        params["ampNorm"]  =ampNorm,
-        
-        self._ignoreValueChanged = True
-        self.setParams(**params)
-        self._ignoreValueChanged = False
+        if prof is not None:
+            keys = ["sr", "damping", "gain", "numThreads", "detChars"]
+            params = {key:prof.value(key) for key in keys}
+            method, freqNorm, ampNorm = prof.value("features")
+            params["method"] = method,
+            params["freqNorm"] = freqNorm,
+            params["ampNorm"]  =ampNorm,
+            
+            self._ignoreValueChanged = True
+            self.setParams(**params)
+            self._ignoreValueChanged = False
     
     def _saveProfile(self, name):
         params, invalid = self.getArgs()
