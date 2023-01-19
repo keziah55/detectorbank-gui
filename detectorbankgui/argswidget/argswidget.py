@@ -19,15 +19,15 @@ from collections import namedtuple
 
 @dataclass
 class Parameter:
-    name: str
+    # name: str
     widget: QWidget # must have `value` property
-    prettyName: str = None
+    prettyName: str #= None
     toolTip: str = None
     castType: object = None
 
     def __post_init__(self):
-        if self.prettyName is None:
-            self.prettyName = self.name
+        # if self.prettyName is None:
+        #     self.prettyName = self.name
         self.label = QLabel(self.prettyName)
         self.label.setAlignment(Qt.AlignRight)
         for widget in [self.label, self.widget]:
@@ -126,29 +126,32 @@ class _AbsZArgsWidget(QWidget):
         # Parameter objects automatically make labels and set tool tips
         self.widgets = {
             "sr":Parameter(
-                "sr", self.srWidget, "Sample rate", "Sample rate of audio file", float), 
+                self.srWidget, "Sample rate", "Sample rate of audio file", float), 
             "numThreads":Parameter(
-                "numThreads", self.threadsWidget, "Threads", 
+                self.threadsWidget, "Threads", 
                 "Maximum number of threads to execute concurrently to determine the detector outputs. "
                 "Passing a value of less than 1 causes the number of threads to "
                 "be set according to the number of reported CPU cores",
                 int), 
             "detChars":Parameter(
-                "detChars", self.freqBwWidget, "Frequencies and bandwidths", "Detector characteristics"),
+                self.freqBwWidget, "Frequencies and bandwidths", "Detector characteristics"),
             "damping":Parameter(
-                "damping", self.dampingWidget, "Damping", 
+                self.dampingWidget, "Damping", 
                 "Damping factor for all detectors. Default is 0.0001. "
                 "Sensible range is between 0.0001 and 0.0005",
                 float),
             "gain":Parameter(
-                "gain", self.gainWidget, "Gain", "Gain applied to output. Default is 25", float),
-            "method":Parameter("method", self.methodWidget, "Numerical method", 
-                               "Numerical method used to solve equation. "
-                               "Default is fourth order Runge-Kutta"),
-            "freqNorm":Parameter("freqNorm", self.freqNormWidget, "Frequency normalization", 
-                                 "Whether to normalize frequency. Default is unnormalized"),
-            "ampNorm":Parameter("ampNorm", self.ampNormWidget, "Amplitude normalization", 
-                                "Whether to normalize amplitude response. Default is unnormalized")}
+                self.gainWidget, "Gain", "Gain applied to output. Default is 25", float),
+            "method":Parameter(
+                self.methodWidget, "Numerical method", 
+                "Numerical method used to solve equation. Default is fourth order Runge-Kutta"),
+            "freqNorm":Parameter(
+                self.freqNormWidget, "Frequency normalization", 
+                "Whether to normalize frequency. Default is unnormalized"),
+            "ampNorm":Parameter(
+                self.ampNormWidget, "Amplitude normalization", 
+                "Whether to normalize amplitude response. Default is unnormalized")
+            }
         
         form = QGridLayout()
         for row, param in enumerate(self.widgets.values()):
