@@ -74,6 +74,7 @@ class SegmentWidget(QWidget):
         
         if audioAvailable:
             self.playButton.clicked.connect(lambda *args: self._playStopSegment())
+        self.playButton.setToolTip("Listen to this region")
         
         self.playing = False
         

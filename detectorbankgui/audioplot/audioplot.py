@@ -272,9 +272,9 @@ class AudioPlot(PlotWidget):
         
         # context menu
         self.contextMenu = QMenu()
-        self._addAction = self.contextMenu.addAction("Add segment")
+        self._addAction = self.contextMenu.addAction("Add region")
         self._addAction.triggered.connect(self._addSegmentAtMouse)
-        self._removeAction = self.contextMenu.addAction("Remove segment")
+        self._removeAction = self.contextMenu.addAction("Remove region")
         self._removeAction.triggered.connect(self._removeSegmentAtMouse)
         self._contextMenuPos = None
         self.plotItem.setMenuEnabled(False)
@@ -381,7 +381,7 @@ class AudioPlot(PlotWidget):
                 self._removeSegmentAtMouse()
             else:
                 try:
-                    self.parent.statusMessage.emit("Cannot remove first segment")
+                    self.parent.statusMessage.emit("Cannot remove first region")
                 except:
                     pass
             

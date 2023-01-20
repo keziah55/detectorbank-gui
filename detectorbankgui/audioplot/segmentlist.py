@@ -59,7 +59,7 @@ class _SegmentList(GroupBox):
     """
     
     def __init__(self, parent=None, defaultMin=None, defaultMax=None):
-        super().__init__(parent=parent, title="Segments", layout="vbox")
+        super().__init__(parent=parent, title="Regions", layout="vbox")
         
         self._min = defaultMin
         self._max = defaultMax
@@ -68,13 +68,13 @@ class _SegmentList(GroupBox):
             self.addButton = QPushButton(icon, "")
         else:
             self.addButton = QPushButton("Add")
-        self.addButton.setToolTip("Add new segment")
+        self.addButton.setToolTip("Add new region")
         
         if (icon := QIcon.fromTheme('list-remove')) is not None:
             self.removeAllButton = QPushButton(icon, "")
         else:
             self.removeAllButton = QPushButton("Remove all")
-        self.removeAllButton.setToolTip("Remove all segments")
+        self.removeAllButton.setToolTip("Remove all regions")
         
         # maintain list of segments so we can emit correct index with signals
         # (layout count can be unreliable when widgets have been removed)
@@ -125,7 +125,7 @@ class _SegmentList(GroupBox):
         if row > 1:
             # don't add remove button to first segment
             removeButton = self._makeRemoveButton()
-            removeButton.setToolTip("Remove this segment")
+            removeButton.setToolTip("Remove this region")
             segmentLayout.addWidget(removeButton)
             removeButton.clicked.connect(lambda: self._emitRemoveSegment(segment))
         else:

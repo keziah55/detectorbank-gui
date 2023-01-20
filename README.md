@@ -10,3 +10,16 @@
 - [pyqt5](https://www.riverbankcomputing.com/software/pyqt/) or [pyside2](https://wiki.qt.io/Qt_for_Python)
 - [customQObjects](https://github.com/keziah55/CustomPyQtObjects)
 - [BeautifulSoup](https://pypi.org/project/beautifulsoup4/)
+- lxml
+
+To build the documentation:
+
+- [mkdocs](https://www.mkdocs.org/)
+- [pymdown-extensions](https://facelessuser.github.io/pymdown-extensions/)
+
+To run the tests:
+
+- pytest
+- pytest-qt
+- pytest-cov 
+- pytest-profiling 

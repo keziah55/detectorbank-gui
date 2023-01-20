@@ -26,7 +26,7 @@ testDir="../detectorbank-gui-test"
 resultsDir="results"
 ts=`date +%s%6N` # timestamp in ms
 
-# remove resutlsDir from current directory, so the results can be moved over at the end of this script
+# remove resultsDir from current directory, so the results can be moved over at the end of this script
 if [ -d "$resultsDir" ]; then
     rm -rf $resultsDir/*
 fi
