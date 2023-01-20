@@ -1,5 +1,8 @@
 # DetectorBank GUI
 
+See the [User guide](https://keziah55.github.io/detectorbank-gui/user_guide/)
+for an overview of the application.
+
 ## Requirements
 
 - [DetectorBank](https://github.com/keziah55/DetectorBank)
