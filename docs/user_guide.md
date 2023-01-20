@@ -108,4 +108,23 @@ You can set a default profile in Edit->Preferences->Parameters.
 
 | ![Output](../img/output.png "Analysis of audio file" )
 |:--:|
-| *Analysis of the four selected audioregions* |
+| *Analysis of the four selected audio regions* |
+
+Once you've loaded an audio file and chosen your parameters, you can perform the analysis 
+by clicking the 'Run' button at the top left of the Output panel, pr pressing F5.
+
+A plot will be created for each region. The title of the plot is the region time range 
+and it is displayed in the same colour as the region. 
+
+Hovering the mouse over a line in a plot will highlight that line. Under the plot, the time 
+at the mouse point is displayed, along with the frequency represented by the selected line 
+and its amplitude at the mouse point. When a line is hovered, it is also highlighted in the 
+legend under the plots, e.g. the in the bottom left, the blue line showing the response 
+at 440Hz is highlighted in the plot and the legend.
+
+By default, the plots are shown in a 2x2 grid, spanning as many pages as necessary.
+You can change the grid dimensions by setting the rows and columns at the top of the 
+Output panel.
+
+The buttons at the end of the top toolbar allow you to export all plots to a chosen 
+directory or remove all plots from the panel.

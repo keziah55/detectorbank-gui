@@ -10,7 +10,7 @@ from .abstractpage import AbstractPage, RightLabel
 
 class BandwidthPage(AbstractPage):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, name="bandwidth", **kwargs)
+        super().__init__(*args, name="bandwidths", **kwargs)
         
         label = RightLabel("Bandwidth:")
         self.box = DoubleSpinBox()
