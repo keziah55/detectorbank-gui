@@ -22,3 +22,17 @@ class ArgsWidget(QWidget):
             layout.addWidget(widget)
             
         self.setLayout(layout)
+        
+    def __getattr__(self, name):
+        if hasattr(self.detbankargs, name):
+            return getattr(self.detbankargs, name)
+        elif hasattr(self.extraargs, name):
+            return getattr(self.extraargs, name)
+        else:
+            raise AttributeError(f"ArgsWidget has no attribute {name}")
+        
+    def getDetBankArgs(self):
+        return self.detbankargs.getArgs()
+    
+    def getExtraArgs(self):
+        return self.extraargs.getArgs()
