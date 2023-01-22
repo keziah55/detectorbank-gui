@@ -22,6 +22,7 @@ class SegmentPlotWidget(QWidget):
         self.freqs = freqs
         self.segment = segment
         self.parent = parent
+        self.title = kwargs.get('title', None)
         
         self.plotLabel = QLabel(self)
         self.plotWidget = PlotWidget(*args, **kwargs)
@@ -237,9 +238,10 @@ class HopfPlot(QWidget):
         self.toolbar.addSeparator()
         
         ## export and clear##
-        self.exportAction = self.toolbar.addAction("Export")
-        if (icon := QIcon.fromTheme("document-save-as")) is not None:
-            self.exportAction.setIcon(icon)
+        # self.exportAction = self.toolbar.addAction("Export")
+        # if (icon := QIcon.fromTheme("document-save-as")) is not None:
+            # self.exportAction.setIcon(icon)
+        # self.exportAction.triggered.connect(self._exportAll)
             
         self.clearAction = self.toolbar.addAction("Clear")
         if (icon := QIcon.fromTheme("edit-clear")) is not None:
@@ -368,7 +370,7 @@ class HopfPlot(QWidget):
                 return idx
         return None
         
-    def export(self):
+    def _exportAll(self):
         """ Export all plots """
         pass
     
