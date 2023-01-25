@@ -6,7 +6,7 @@ Form to edit DetectorBank args
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
                             QDialog, QFileDialog, QGridLayout, QScrollArea, QMessageBox)
 from qtpy.QtCore import Qt, Slot, Signal
-from customQObjects.widgets import ElideMixin, GroupBox
+from customQObjects.widgets import ElideMixin, GroupBox, ComboBox
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
 from .frequencydialog import FrequencyDialog
 from .profiledialog import LoadDialog, SaveDialog
@@ -165,6 +165,9 @@ class _DetBankArgsWidget(QWidget):
         self.loadProfileButton = QPushButton("Load")
         self.saveProfileButton = QPushButton("Save")
         self.currentProfileLabel = ProfileLabel()
+        self.profileBox = ComboBox()
+        self.profileBox.addItems(["None"] + ProfileManager().profiles)
+        self.profileBox.setToolTip("Default DetectorBank profile")
         
         self._ignoreValueChanged = False
         self._profile = None
@@ -175,7 +178,9 @@ class _DetBankArgsWidget(QWidget):
         self.restoreDefaultsButton.clicked.connect(self._setDefaults)
         
         profileGroup = GroupBox("Profile", layout="hbox")
-        for button in [self.currentProfileLabel, self.saveProfileButton, self.loadProfileButton]:
+        widgets = [self.currentProfileLabel, self.saveProfileButton, 
+                   self.loadProfileButton, self.profileBox]
+        for button in widgets:
             profileGroup.addWidget(button)
             
         layout = QVBoxLayout()
