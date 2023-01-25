@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Dialogs to select profile to load or choose name to save.
+Dialogs to select profile to load or choose name to save, also with check box
+to set this as the default profile.
 """
 from qtpy.QtWidgets import (QDialog, QRadioButton, QVBoxLayout, QDialogButtonBox,
-                            QLineEdit, QLabel, QListWidget, QScrollArea)
+                            QLineEdit, QLabel, QListWidget, QScrollArea, QCheckBox)
 from qtpy.QtCore import QTimer
 from customQObjects.widgets import GroupBox
 from ..profilemanager import ProfileManager
@@ -13,12 +14,18 @@ class _ProfileDialog(QDialog):
     def __init__(self, *args, currentProfile=None, **kwargs):
         super().__init__(*args, **kwargs)
         
+        self.defaultCheckBox = QCheckBox("Set as default")
+        
         # buttons
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
         self.okButton =  self.buttonBox.button(QDialogButtonBox.Ok)
         self.okButton.clicked.connect(self.accept)
         cancelButton = self.buttonBox.button(QDialogButtonBox.Cancel)
         cancelButton.clicked.connect(self.reject)
+        
+    def getProfileName(self) -> tuple[str, bool]:
+        # abstract method
+        raise NotImplementedError()
 
 class LoadDialog(_ProfileDialog):
     def __init__(self, *args, currentProfile=None, **kwargs):
@@ -36,16 +43,18 @@ class LoadDialog(_ProfileDialog):
         
         layout = QVBoxLayout()
         layout.addWidget(self.profileGroup)
+        layout.addWidget(self.defaultCheckBox)
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
         
         self.setWindowTitle("Load profile")
         
-    def getProfileName(self):
-        """ Return name of selected profile """
+    def getProfileName(self) -> tuple[str, bool]:
+        """ Return name of selected profile and whether to set this as the default """
         for name, button in self._buttons.items():
             if button.isChecked():
-                return name
+                break
+        return name, self.defaultCheckBox.isChecked()
 
 class SaveDialog(_ProfileDialog):
     def __init__(self, *args, currentProfile=None, **kwargs):
@@ -76,13 +85,15 @@ class SaveDialog(_ProfileDialog):
         layout.addWidget(self.nameScroll)
         layout.addWidget(self.nameEdit)
         layout.addWidget(self.label)
+        layout.addWidget(self.defaultCheckBox)
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
         
         self.setWindowTitle("Save profile")
         
-    def getProfileName(self):
-        return self.nameEdit.text()
+    def getProfileName(self) -> tuple[str, bool]:
+        """ Return chosen profile name and whether to set as default profile """
+        return self.nameEdit.text().strip(), self.defaultCheckBox.isChecked()
     
     def _validate(self, name=None):
         if name is None:

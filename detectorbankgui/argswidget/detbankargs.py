@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLab
                             QDialog, QFileDialog, QGridLayout, QScrollArea, QMessageBox)
 from qtpy.QtCore import Qt, Slot, Signal
 from customQObjects.widgets import ElideMixin, GroupBox, ComboBox
+from customQObjects.core import Settings
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
 from .frequencydialog import FrequencyDialog
 from .profiledialog import LoadDialog, SaveDialog
@@ -165,23 +166,19 @@ class _DetBankArgsWidget(QWidget):
         self.loadProfileButton = QPushButton("Load")
         self.saveProfileButton = QPushButton("Save")
         self.currentProfileLabel = ProfileLabel()
-        self.profileBox = ComboBox()
-        self.profileBox.addItems(["None"] + ProfileManager().profiles)
-        self.profileBox.setToolTip("Default DetectorBank profile")
         
         self._ignoreValueChanged = False
         self._profile = None
         self.currentProfileAltered = False
-        self.loadProfileButton.clicked.connect(self.loadProfile)
-        self.saveProfileButton.clicked.connect(self.saveProfile)
+        self.loadProfileButton.clicked.connect(self._loadProfile)
+        self.saveProfileButton.clicked.connect(self._saveProfile)
         
         self.restoreDefaultsButton.clicked.connect(self._setDefaults)
         
         profileGroup = GroupBox("Profile", layout="hbox")
-        widgets = [self.currentProfileLabel, self.saveProfileButton, 
-                   self.loadProfileButton, self.profileBox]
-        for button in widgets:
-            profileGroup.addWidget(button)
+        widgets = [self.currentProfileLabel, self.saveProfileButton,  self.loadProfileButton]
+        for widget in widgets:
+            profileGroup.addWidget(widget)
             
         layout = QVBoxLayout()
         layout.addWidget(profileGroup)
@@ -204,7 +201,6 @@ class _DetBankArgsWidget(QWidget):
             self.currentProfileAltered = False
             self.currentProfileLabel.setName(name)
         else:
-            print(f"set currentProfile to {name}; calling currentProfileLabel.profileAltered")
             self.currentProfileAltered = True
             self.currentProfileLabel.profileAltered()
         
@@ -214,19 +210,28 @@ class _DetBankArgsWidget(QWidget):
             self.currentProfileAltered = True
             self.currentProfileLabel.profileAltered()
         
-    def loadProfile(self):
+    def _loadProfile(self):
+        """ Show load dialog and load profile """
         dialog = LoadDialog(parent=self, currentProfile=self._profile)
         reply = dialog.exec_()
         if reply == QDialog.Accepted:
-            self._loadProfile(dialog.getProfileName())
+            name, default = dialog.getProfileName()
+            self.loadProfile(name)
+            if default:
+                self._writeDefaultProfile()
     
-    def saveProfile(self):
+    def _saveProfile(self):
+        """ Show save dialog and save profile """
         dialog = SaveDialog(parent=self)
         reply = dialog.exec_()
         if reply == QDialog.Accepted:
-            self._saveProfile(dialog.getProfileName())
+            name, default = dialog.getProfileName()
+            if name: # if name is not empty string
+                self.saveProfile(name)
+                if default:
+                    self._writeDefaultProfile()
     
-    def _loadProfile(self, profile):
+    def loadProfile(self, profile):
         self.currentProfile = profile
         
         prof = ProfileManager().getProfile(profile)
@@ -236,13 +241,13 @@ class _DetBankArgsWidget(QWidget):
             method, freqNorm, ampNorm = prof.value("features")
             params["method"] = method,
             params["freqNorm"] = freqNorm,
-            params["ampNorm"]  =ampNorm,
+            params["ampNorm"] = ampNorm,
             
             self._ignoreValueChanged = True
             self.setParams(**params)
             self._ignoreValueChanged = False
     
-    def _saveProfile(self, name):
+    def saveProfile(self, name):
         params, invalid = self.getArgs()
         if len(invalid) > 0:
             QMessageBox.warning(self, "Cannot save profile", 
@@ -256,6 +261,11 @@ class _DetBankArgsWidget(QWidget):
                 features, params['damping'], params['gain'])
         det = DetectorBank(*args)
         det.saveProfile(name)
+        
+    def _writeDefaultProfile(self):
+        """ Write default profile name to config file """
+        settings = Settings()
+        settings.setValue("params/defaultProfile", self.profileBox.currentText())
         
     def setParams(self, **kwargs):
         """ Set arg value in form """

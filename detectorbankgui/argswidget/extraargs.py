@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jan 22 16:20:09 2023
-
-@author: keziah
+Form to edit additional options
 """
 
-from qtpy.QtWidgets import (QWidget, QHBoxLayout, QPushButton, QLabel, 
+from qtpy.QtWidgets import (QWidget, QPushButton, QLabel, 
                             QCheckBox, QSpinBox, QGridLayout,
                             QFileDialog, QVBoxLayout, QScrollArea, QMessageBox)
 from qtpy.QtCore import Qt
-
+from customQObjects.core import Settings
 
 class ExtraOptionsWidget(QScrollArea):
     def __init__(self, *args, **kwargs):
@@ -32,6 +30,7 @@ class _ExtraOptionsWidget(QWidget):
         
         self.downsampleBox = QSpinBox()
         self.downsampleBox.setMaximum(2**32//2-1) # essentially no max
+        self.downsampleBox.valueChanged.connect(self._writeDownsampleFactor)
         self.downsampleBox.setToolTip("Factor by which to downsample the results when plotting")
         row = 0
         self._addRow(row, self.downsampleBox, "Downsample factor")
@@ -57,3 +56,15 @@ class _ExtraOptionsWidget(QWidget):
             if len(widgets) == 2:
                 col += 1
             self.layout.addWidget(widget, row, col)
+            
+    def _writeDownsampleFactor(self):
+        settings = Settings()
+        settings.setValue("plot/downsample", self.downsampleBox.value())
+        
+    def setDownsampleFactor(self, downsample: int):
+        """ Update 'downsample factor' box value """
+        self.downsampleBox.setValue(downsample)
+        
+    def getDownsampleFactor(self) -> int:
+        """ Return current 'downsample factor' box value """
+        return self.downsampleBox.value()

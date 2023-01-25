@@ -13,7 +13,6 @@ from .analyser import Analyser
 from .argswidget import ArgsWidget
 from .audioread import read_audio
 from .hopfplot import HopfPlot
-from .preferences import PreferencesDialog
 import os
 from functools import partial
 from collections import deque, namedtuple
@@ -28,8 +27,6 @@ class DetectorBankGui(QMainWindow):
     
     def __init__(self, *args, audioFile=None, profile=None, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        self.prefDialog = PreferencesDialog(self)
         
         self._createActions()
         self._createToolBars()
@@ -98,7 +95,11 @@ class DetectorBankGui(QMainWindow):
         # restore previous profile
         profile = settings.value("params/currentProfile", cast=str)
         if profile != "None":
-            self.argswidget._loadProfile(profile)
+            self.argswidget.loadProfile(profile)
+            
+        # get saved downsample factor
+        downsample = settings.value("plot/downsample", cast=int, defaultValue=1000)
+        self.argswidget.setDownsampleFactor(downsample)
         
         return super().show()
         
@@ -165,8 +166,7 @@ class DetectorBankGui(QMainWindow):
         
         self._setTemporaryStatus(f"Starting analysis of {self._currentAudioFile}")
         
-        settings = Settings()
-        downsample = settings.value("plot/downsample", cast=int)
+        downsample = self.argswidget.getDownsampleFactor()
         
         self.analysers = [] 
         segments = self.audioplot.getSegments()
@@ -267,11 +267,6 @@ class DetectorBankGui(QMainWindow):
         if (icon := QIcon.fromTheme("application-exit")) is not None:
             self.exitAction.setIcon(icon)
             
-        self.preferencesAction = QAction(
-            "&Preferences", self, shortcut=QKeySequence.Preferences,
-            statusTip="Edit preferences",
-            triggered=self.prefDialog.show)
-        
     def _createToolBars(self):
         
         self.viewToolBar = QToolBar("View")
@@ -294,9 +289,6 @@ class DetectorBankGui(QMainWindow):
         self.fileMenu.addAction(self.openAudioFileAction)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAction)
-        
-        self.editMenu = self.menuBar().addMenu("&Edit")
-        self.editMenu.addAction(self.preferencesAction)
         
         self.analyseMenu = self.menuBar().addMenu("&Analysis")
         self.analyseMenu.addAction(self.analyseAction)
