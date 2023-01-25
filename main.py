@@ -6,7 +6,7 @@ DetectorBank GUI.
 import sys
 import argparse
 from qtpy.QtWidgets import QApplication
-from detectorbankgui.mainwindow import DetectorBankBGui
+from detectorbankgui.mainwindow import DetectorBankGui
 
 if __name__ == '__main__':
     
@@ -22,6 +22,6 @@ if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     
-    window = DetectorBankBGui(audioFile=args.input, profile=args.profile)
+    window = DetectorBankGui(audioFile=args.input, profile=args.profile)
     
     sys.exit(app.exec_())
