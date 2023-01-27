@@ -166,8 +166,8 @@ class TestArgsWidget:
             "ampNorm":DetectorBank.amp_unnormalized
             }
         
-        args, invalid = self.widget.getArgs()
-        assert len(invalid) == 0
+        # will raise exception if any args are invalid
+        args = self.widget.getArgs()
         
         for key, expected in expected_values.items():
             value = args[key]
