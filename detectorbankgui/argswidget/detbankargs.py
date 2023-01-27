@@ -3,10 +3,10 @@
 """
 Form to edit DetectorBank args
 """
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
-                            QDialog, QFileDialog, QGridLayout, QScrollArea, QMessageBox)
+from qtpy.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, QDialog, 
+                            QSizePolicy,QGridLayout, QScrollArea, QMessageBox)
 from qtpy.QtCore import Qt, Slot, Signal
-from customQObjects.widgets import ElideMixin, GroupBox, ComboBox
+from customQObjects.widgets import ElideMixin, GroupBox
 from customQObjects.core import Settings
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
 from .frequencydialog import FrequencyDialog
@@ -96,7 +96,7 @@ class DetBankArgsWidget(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)

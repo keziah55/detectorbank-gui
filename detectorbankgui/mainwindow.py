@@ -3,15 +3,14 @@
 """
 Main window
 """
-from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QFileDialog, 
-                            QMessageBox, QProgressBar, QTabBar, QToolBar)
+from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QMessageBox, 
+                            QProgressBar, QTabBar, QToolBar)
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from customQObjects.core import Settings
 from .audioplot import AudioPlotWidget
 from .analyser import Analyser
 from .argswidget import ArgsWidget
-from .audioread import read_audio
 from .hopfplot import HopfPlot
 from .invalidargexception import InvalidArgException
 import os
@@ -30,12 +29,15 @@ class DetectorBankGui(QMainWindow):
     def __init__(self, *args, audioFile=None, profile=None, **kwargs):
         super().__init__(*args, **kwargs)
         
+        self.audioplot = AudioPlotWidget(self)
+        self.argswidget = ArgsWidget(self)
+        
         self._createActions()
         self._createToolBars()
         self._createMenus()
         
-        self.audioplot = AudioPlotWidget(self)
-        self.argswidget = ArgsWidget(self)
+        # actions have to exist before hopfplot (but after audioplot)
+        # might need to come up with a better solution than this...
         self.hopfplot = HopfPlot(self)
         
         self.statusBar()
@@ -46,7 +48,7 @@ class DetectorBankGui(QMainWindow):
         self._progressQueue = deque()
         
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
-        self.audioplot.requestSelectAudio.connect(self._openAudioFile)
+        self.audioplot.audioFileOpened.connect(self._setAudioSr)
         
         widgets = {"audioinput":('Audio Input', self.audioplot, 'left', 'input'),
                    "args":('Parameters',self.argswidget, 'left', 'input'),
@@ -56,10 +58,8 @@ class DetectorBankGui(QMainWindow):
             name, widget, area, viewmode = values
             self.createDockWidget(widget, area, name, viewmode, key)
         
-        self._currentAudioFile = None
-        self._openAudioDir = os.getcwd()
         if audioFile is not None:
-            self._openAudio(audioFile)
+            self.audioplot.openAudioFile(audioFile)
             
         self._viewmode = None
         self.show()
@@ -136,26 +136,10 @@ class DetectorBankGui(QMainWindow):
     def running(self, value):
         self._running = value
         self.runToolBar.setEnabled(not value)
-            
-    def _openAudioFile(self):
-        """ Show open file dialog """
-        fname, _ = QFileDialog.getOpenFileName(
-            self, "Select audio file", self._openAudioDir, "Wav files (*.wav);;All files (*)")
-        if fname:
-            self._openAudio(fname)
-            
-    def _openAudio(self, fname):
-        """ Read audio file and set audio plot """
-        try:
-            self.audio, self.sr = read_audio(fname)
-        except Exception as err:
-            self._setTemporaryStatus(f"Cound not open {os.path.basename(fname)}")
-            self._currentAudioFile = None
-        else:
-            self.audioplot.setAudio(self.audio, self.sr)
-            self._openAudioDir = os.path.dirname(fname)
-            self._currentAudioFile = fname
-            self._setTemporaryStatus(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
+        
+    def _setAudioSr(self, audio, sr):
+        self.audio = audio
+        self.sr = sr
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
@@ -165,7 +149,7 @@ class DetectorBankGui(QMainWindow):
         except InvalidArgException as err:
             QMessageBox.warning(self, errorMsgTitle, str(err))
             return
-        if self._currentAudioFile is None:
+        if self.audioplot.audioFilePath is None:
             QMessageBox.warning(self, errorMsgTitle, "Please select an audio input file")
             return
         try:
@@ -174,7 +158,7 @@ class DetectorBankGui(QMainWindow):
             QMessageBox.warning(self, errorMsgTitle, str(err))
             return
         
-        self._setTemporaryStatus(f"Starting analysis of {self._currentAudioFile}")
+        self._setTemporaryStatus(f"Starting analysis of {self.audioplot.audioFilePath}")
         
         downsample = self.argswidget.getDownsampleFactor()
         
@@ -267,7 +251,7 @@ class DetectorBankGui(QMainWindow):
         self.openAudioFileAction = QAction(
             "&Open audio file", self, shortcut=QKeySequence.Open, 
             statusTip="Select audio file",
-            triggered=self._openAudioFile)
+            triggered=self.audioplot.openAudioFile)
         if (icon := QIcon.fromTheme("audio-x-generic")) is not None:
             self.openAudioFileAction.setIcon(icon)
             

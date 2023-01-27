@@ -5,18 +5,21 @@ Widget to display audio and select segments
 """
 from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
 from qtpy.QtCore import Signal, Slot, Qt, QBuffer, QByteArray, QIODevice
-from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel, QPushButton
+from qtpy.QtWidgets import (QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel, 
+                            QPushButton, QFileDialog, QMessageBox)
 from qtpy.QtGui import QCursor, QIcon
-import qtpy
-audioAvailable = True if qtpy.QT_VERSION.split('.')[0] == '5' else False
-if audioAvailable:
-    from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
 from .segmentlist import SegmentList
-
+from ..audioread import read_audio
 import numpy as np
 import itertools
 from dataclasses import dataclass, field
 from uuid import UUID, uuid4
+import os
+
+import qtpy
+audioAvailable = True if qtpy.QT_VERSION.split('.')[0] == '5' else False
+if audioAvailable:
+    from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
         
 @dataclass
 class Segment:
@@ -55,7 +58,11 @@ class AudioPlotWidget(QWidget):
         Emitted with a message for the status bar.
     """
     
-    requestSelectAudio = Signal()
+    audioFileOpened = Signal(object, int)
+    """ **signal** audioFileOpened(np.ndarray `audio`, int `sr`)
+    
+        Emitted when audio file is read.
+    """
     
     def __init__(self, parent=None):
         
@@ -84,7 +91,7 @@ class AudioPlotWidget(QWidget):
         
         self.plotWidget.valuesUnderMouse.connect(self.setCrosshairLabel)
         
-        self.openAudioButton.clicked.connect(self.requestSelectAudio)
+        self.openAudioButton.clicked.connect(self._openAudioFile)
         
         # only allow playback in qt5
         if audioAvailable:
@@ -118,17 +125,47 @@ class AudioPlotWidget(QWidget):
         rightLayout.addWidget(self.segmentList)
         
         layout = QHBoxLayout()
-        # layout.addWidget(self.plotWidget)
         layout.addLayout(plotLayout)
-        # layout.addWidget(self.segmentList)
         layout.addLayout(rightLayout)
         
         self.setLayout(layout)
         
+        self._openAudioDir = os.getcwd()
+        self.audioFilePath = None
         self.audio = None
         self.sr = None
         self._max = 1
         self.addSegment(start=0, stop=self._max)
+        
+    @property
+    def audioFilePath(self):
+        return self._currentAudioFile
+    
+    @audioFilePath.setter
+    def audioFilePath(self, p):
+        self._currentAudioFile = p
+        
+    def _openAudioFile(self):
+        """ Show open file dialog """
+        fname, _ = QFileDialog.getOpenFileName(
+            self, "Select audio file", self._openAudioDir, "Wav files (*.wav);;All files (*)")
+        if fname:
+            self.openAudioFile(fname)
+            
+    def openAudioFile(self, fname):
+        """ Read audio file and set audio plot """
+        try:
+            self.audio, self.sr = read_audio(fname)
+        except Exception as err:
+            msg = f"Opening '{os.path.basename(fname)}' failed with error:\n{err}"
+            QMessageBox.warning(self, "Cannot open audio file", msg)
+            self.audioFilePath = None
+        else:
+            self.setAudio(self.audio, self.sr)
+            self._openAudioDir = os.path.dirname(fname)
+            self.audioFilePath = fname
+            self.audioFileOpened.emit(self.audio, self.sr)
+            self.statusMessage.emit(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
         
     def setAudio(self, audio, sr):
         """ Set audio and sample rate. """
