@@ -251,8 +251,8 @@ class _DetBankArgsWidget(QWidget):
     def saveProfile(self, name):
         try:
             params = self.getArgs()
-        except InvalidArgException as err:
-            QMessageBox.warning(self, "Cannot save profile", err)
+        except InvalidArgException as exc:
+            QMessageBox.warning(self, "Cannot save profile", str(exc))
             return
             
         features = params['method'] | params['freqNorm'] | params['ampNorm']

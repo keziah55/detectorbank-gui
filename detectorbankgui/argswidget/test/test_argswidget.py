@@ -1,6 +1,7 @@
 from detectorbankgui.argswidget import ArgsWidget
 from detectorbankgui.argswidget.profiledialog import SaveDialog, LoadDialog
 from detectorbankgui.profilemanager import ProfileManager
+from detectorbankgui.invalidargexception import InvalidArgException
 from detectorbank import DetectorBank
 from qtpy.QtWidgets import QDialog
 from qtpy.QtCore import Qt
@@ -88,9 +89,10 @@ class TestArgsWidget:
             assert param.widget.value == expected
             if key == "sr":
                 assert param.widget.text() == f"{expected} Hz"
-                
-        args, invalid = self.widget.getArgs()
-        assert invalid == ["Frequencies and bandwidths"]
+            
+        with pytest.raises(InvalidArgException) as exc:
+            args = self.widget.getArgs()
+        assert "Frequencies and bandwidths" in str(exc)
                 
         qtbot.mouseClick(self.widget.restoreDefaultsButton, Qt.LeftButton)
         qtbot.wait(50)
@@ -127,7 +129,7 @@ class TestArgsWidget:
                 param.widget.setValue(value)
            
         monkeypatch.setattr(SaveDialog, "exec_", lambda *args: QDialog.Accepted)
-        monkeypatch.setattr(SaveDialog, "getProfileName", lambda *args: profile_name)
+        monkeypatch.setattr(SaveDialog, "getProfileName", lambda *args: profile_name, False)
         
         with qtbot.waitSignal(self.widget.saveProfileButton.clicked):
             qtbot.mouseClick(self.widget.saveProfileButton, Qt.LeftButton)
@@ -138,7 +140,7 @@ class TestArgsWidget:
     def test_load_profile(self, setup_load_profile, qtbot, monkeypatch):
         profile_name = "_test_profile2"
         monkeypatch.setattr(LoadDialog, "exec_", lambda *args: QDialog.Accepted)
-        monkeypatch.setattr(LoadDialog, "getProfileName", lambda *args: profile_name)
+        monkeypatch.setattr(LoadDialog, "getProfileName", lambda *args: profile_name, False)
         
         with qtbot.waitSignal(self.widget.loadProfileButton.clicked):
             qtbot.mouseClick(self.widget.loadProfileButton, Qt.LeftButton)

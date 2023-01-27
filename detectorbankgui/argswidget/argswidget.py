@@ -5,8 +5,7 @@ Created on Sun Jan 22 16:18:14 2023
 
 @author: keziah
 """
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
-                            QDialog, QFileDialog, QGridLayout, QScrollArea, QMessageBox)
+from qtpy.QtWidgets import QWidget, QHBoxLayout
 from .detbankargs import DetBankArgsWidget
 from .extraargs import ExtraOptionsWidget
 from customQObjects.widgets import HSplitter

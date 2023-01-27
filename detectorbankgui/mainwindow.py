@@ -143,19 +143,21 @@ class DetectorBankGui(QMainWindow):
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
+        
+        # check that have have all necessary parameters and show warning if not
         errorMsgTitle = "Cannot analyse audio"
         try:
             params = self.argswidget.getArgs()
-        except InvalidArgException as err:
-            QMessageBox.warning(self, errorMsgTitle, str(err))
+        except InvalidArgException as exc:
+            QMessageBox.warning(self, errorMsgTitle, str(exc))
             return
         if self.audioplot.audioFilePath is None:
             QMessageBox.warning(self, errorMsgTitle, "Please select an audio input file")
             return
         try:
             saveDir = self.argswidget.getSaveDir()
-        except InvalidArgException as err:
-            QMessageBox.warning(self, errorMsgTitle, str(err))
+        except InvalidArgException as exc:
+            QMessageBox.warning(self, errorMsgTitle, str(exc))
             return
         
         self._setTemporaryStatus(f"Starting analysis of {self.audioplot.audioFilePath}")
