@@ -128,8 +128,11 @@ class TestArgsWidget:
             with qtbot.waitSignal(param.widget.valueChanged):
                 param.widget.setValue(value)
            
+        def patch_getProfileName(*args, **kwargs):
+            return profile_name, False
+           
         monkeypatch.setattr(SaveDialog, "exec_", lambda *args: QDialog.Accepted)
-        monkeypatch.setattr(SaveDialog, "getProfileName", lambda *args: profile_name, False)
+        monkeypatch.setattr(SaveDialog, "getProfileName", patch_getProfileName)
         
         with qtbot.waitSignal(self.widget.saveProfileButton.clicked):
             qtbot.mouseClick(self.widget.saveProfileButton, Qt.LeftButton)
@@ -139,8 +142,10 @@ class TestArgsWidget:
         
     def test_load_profile(self, setup_load_profile, qtbot, monkeypatch):
         profile_name = "_test_profile2"
+        def patch_getProfileName(*args, **kwargs):
+            return profile_name, False
         monkeypatch.setattr(LoadDialog, "exec_", lambda *args: QDialog.Accepted)
-        monkeypatch.setattr(LoadDialog, "getProfileName", lambda *args: profile_name, False)
+        monkeypatch.setattr(LoadDialog, "getProfileName", patch_getProfileName)
         
         with qtbot.waitSignal(self.widget.loadProfileButton.clicked):
             qtbot.mouseClick(self.widget.loadProfileButton, Qt.LeftButton)
