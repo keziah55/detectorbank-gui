@@ -1,4 +1,5 @@
 from detectorbankgui.audioplot import AudioPlotWidget
+from qtpy.QtWidgets import QFileDialog, QMessageBox
 from qtpy.QtCore import Qt
 import pytest 
 import numpy as np
@@ -142,3 +143,31 @@ class TestAudioPlot:
         assert segment.sr == self.sr
         assert abs(segment.samples[1] - len(self.audio)) <= self.atol*self.sr
         assert all(np.isclose((self.seglist._segments[0].values), [0,self.lenaudio], atol=self.atol))
+        
+    def test_open_audio(self, setup_empty, audiofile, audio, qtbot, monkeypatch):
+        
+        def patch_getOpenFileName(*args, **kwargs):
+            return audiofile, None
+        monkeypatch.setattr(QFileDialog, "getOpenFileName", patch_getOpenFileName)
+        
+        with qtbot.waitSignal(self.widget.audioFileOpened):
+            qtbot.mouseClick(self.widget.openAudioButton, Qt.LeftButton)
+            
+        audio, sr = audio
+            
+        assert self.widget.audioFilePath == audiofile
+        assert np.array_equal(self.widget.audio, audio)
+        assert self.widget.sr == sr
+        
+        assert len(self.plot.plotItem.listDataItems()) == 1
+        
+        # test error
+        def patch_getOpenFileName(*args, **kwargs):
+            return "nonexistent/file.wav", None
+        monkeypatch.setattr(QFileDialog, "getOpenFileName", patch_getOpenFileName)
+        monkeypatch.setattr(QMessageBox, "warning", lambda *args, **kwargs: QMessageBox.Ok)
+        
+        with qtbot.assertNotEmitted(self.widget.audioFileOpened):
+            qtbot.mouseClick(self.widget.openAudioButton, Qt.LeftButton)
+        
+        assert self.widget.audioFilePath == audiofile

@@ -159,7 +159,6 @@ class AudioPlotWidget(QWidget):
         except Exception as err:
             msg = f"Opening '{os.path.basename(fname)}' failed with error:\n{err}"
             QMessageBox.warning(self, "Cannot open audio file", msg)
-            self.audioFilePath = None
         else:
             self.setAudio(self.audio, self.sr)
             self._openAudioDir = os.path.dirname(fname)
