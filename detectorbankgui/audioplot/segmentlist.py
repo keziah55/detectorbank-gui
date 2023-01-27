@@ -175,8 +175,3 @@ class _SegmentList(GroupBox):
         else:
             button = QPushButton("Remove")
         return button
-    
-    def _clearSegments(self):
-        # unused method?
-        for row in reversed(range(1, self.layout.rowCount())-1):
-            self.removeSegment(row)

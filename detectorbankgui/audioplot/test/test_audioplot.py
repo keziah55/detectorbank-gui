@@ -171,3 +171,27 @@ class TestAudioPlot:
             qtbot.mouseClick(self.widget.openAudioButton, Qt.LeftButton)
         
         assert self.widget.audioFilePath == audiofile
+        
+    def test_open_another_file(self, setup, audiofile2, qtbot, monkeypatch):
+        
+        seg0 = (0, 1.5)
+        segment = self.plot._segments[0]
+        segment.setRegion(seg0)
+        
+        with qtbot.waitSignal(self.seglist.addButton.clicked):
+            qtbot.mouseClick(self.seglist.addButton, Qt.LeftButton)
+        
+        assert len(self.seglist) == 2
+        
+        # open another file
+        def patch_getOpenFileName(*args, **kwargs):
+            return audiofile2, None
+        monkeypatch.setattr(QFileDialog, "getOpenFileName", patch_getOpenFileName)
+        
+        with qtbot.waitSignal(self.widget.audioFileOpened):
+            qtbot.mouseClick(self.widget.openAudioButton, Qt.LeftButton)
+        
+        assert len(self.seglist) == 1
+        assert len(self.widget.audio) == 719337
+        
+        qtbot.wait(2000)

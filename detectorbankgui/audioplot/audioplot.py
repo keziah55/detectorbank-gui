@@ -161,6 +161,7 @@ class AudioPlotWidget(QWidget):
             QMessageBox.warning(self, "Cannot open audio file", msg)
         else:
             self.setAudio(self.audio, self.sr)
+            self.removeAllSegments()
             self._openAudioDir = os.path.dirname(fname)
             self.audioFilePath = fname
             self.audioFileOpened.emit(self.audio, self.sr)
