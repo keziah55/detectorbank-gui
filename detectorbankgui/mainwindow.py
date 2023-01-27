@@ -13,9 +13,11 @@ from .analyser import Analyser
 from .argswidget import ArgsWidget
 from .audioread import read_audio
 from .hopfplot import HopfPlot
+from .invalidargexception import InvalidArgException
 import os
 from functools import partial
 from collections import deque, namedtuple
+import numpy as np
 
 SegmentAnalysis = namedtuple("SegmentAnalysis", ["segement", "analyser"])
 WidgetView = namedtuple("WidgetView", ["dockwidget", "viewmode"])
@@ -157,16 +159,27 @@ class DetectorBankGui(QMainWindow):
             
     def _doAnalysis(self):
         """ Create DetectorBank and call absZ """
-        params, invalid = self.argswidget.getArgs()
-        if len(invalid) > 0 or self._currentAudioFile is None:
-            QMessageBox.warning(self, "Cannot run", 
-                                f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
-                                "Analysis cannot be carried out.")
+        errorMsgTitle = "Cannot analyse audio"
+        try:
+            params = self.argswidget.getArgs()
+        except InvalidArgException as err:
+            QMessageBox.warning(self, errorMsgTitle, str(err))
+            return
+        if self._currentAudioFile is None:
+            QMessageBox.warning(self, errorMsgTitle, "Please select an audio input file")
+            return
+        try:
+            saveDir = self.argswidget.getSaveDir()
+        except InvalidArgException as err:
+            QMessageBox.warning(self, errorMsgTitle, str(err))
             return
         
         self._setTemporaryStatus(f"Starting analysis of {self._currentAudioFile}")
         
         downsample = self.argswidget.getDownsampleFactor()
+        
+        if saveDir is not None:
+            np.savetxt(os.path.join(saveDir, "frequency_bandwidth.txt"), params['detChars'])
         
         self.analysers = [] 
         segments = self.audioplot.getSegments()
@@ -181,7 +194,10 @@ class DetectorBankGui(QMainWindow):
             self.analysers.append(analyser)
             
             analyser.progress.connect(self._incrementProgress)
-            analyser.finished.connect(partial(self._analyserFinished, key=idx))
+            kwargs = {'key':idx}
+            if saveDir is not None:
+                kwargs['fname'] = os.path.join(saveDir, f"{n0}-{n1}_samples.txt")
+            analyser.finished.connect(partial(self._analyserFinished, **kwargs))
             
         numSamples //= downsample
         self._progressBar.setMaximum(numSamples)
@@ -194,8 +210,10 @@ class DetectorBankGui(QMainWindow):
         # if re-introducing threading here, move this to `_analyserFinished`
         self._progressBar.setValue(self._progressBar.maximum())
         
-    def _analyserFinished(self, result, key):
+    def _analyserFinished(self, result, key, fname=None):
         self.hopfplot.addData(key, result)
+        if fname is not None:
+            np.savetxt(fname, result)
         
     def _incrementProgress(self, inc):
         self._progressQueue.append(inc)

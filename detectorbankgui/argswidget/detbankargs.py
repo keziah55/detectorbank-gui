@@ -12,6 +12,7 @@ from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSp
 from .frequencydialog import FrequencyDialog
 from .profiledialog import LoadDialog, SaveDialog
 from ..profilemanager import ProfileManager
+from ..invalidargexception import InvalidArgException
 import numpy as np
 from detectorbank import DetectorBank
 import os
@@ -248,11 +249,10 @@ class _DetBankArgsWidget(QWidget):
             self._ignoreValueChanged = False
     
     def saveProfile(self, name):
-        params, invalid = self.getArgs()
-        if len(invalid) > 0:
-            QMessageBox.warning(self, "Cannot save profile", 
-                                f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
-                                "Please set valid values and try again.")
+        try:
+            params = self.getArgs()
+        except InvalidArgException as err:
+            QMessageBox.warning(self, "Cannot save profile", err)
             return
             
         features = params['method'] | params['freqNorm'] | params['ampNorm']
@@ -288,7 +288,11 @@ class _DetBankArgsWidget(QWidget):
             ret[name] = value
             if value is None:
                 invalid.append(param.prettyName)
-        return ret, invalid
+        if len(invalid) > 0:
+            msg = (f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
+                    "Please set valid values and try again.")
+            raise InvalidArgException(msg)
+        return ret
     
     def _setDefaults(self):
         

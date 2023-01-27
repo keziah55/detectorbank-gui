@@ -9,6 +9,7 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLab
                             QDialog, QFileDialog, QGridLayout, QScrollArea, QMessageBox)
 from .detbankargs import DetBankArgsWidget
 from .extraargs import ExtraOptionsWidget
+from customQObjects.widgets import HSplitter
 
 class ArgsWidget(QWidget):
     def __init__(self, *args, **kwargs):
@@ -17,10 +18,12 @@ class ArgsWidget(QWidget):
         self.detbankargs = DetBankArgsWidget()
         self.extraargs = ExtraOptionsWidget()
         
-        layout = QHBoxLayout()
+        spliter = HSplitter()
         for widget in [self.detbankargs, self.extraargs]:
-            layout.addWidget(widget)
-            
+            spliter.addWidget(widget)
+        
+        layout = QHBoxLayout()
+        layout.addWidget(spliter)
         self.setLayout(layout)
         
     def __getattr__(self, name):

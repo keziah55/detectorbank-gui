@@ -1,0 +1,1 @@
+class InvalidArgException(Exception): pass
