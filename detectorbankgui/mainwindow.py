@@ -5,8 +5,8 @@ Main window
 """
 from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QMessageBox, 
                             QProgressBar, QTabBar, QToolBar)
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtCore import Qt, QUrl
+from qtpy.QtGui import QIcon, QKeySequence, QDesktopServices
 from customQObjects.core import Settings
 from .audioplot import AudioPlotWidget
 from .analyser import Analyser
@@ -249,6 +249,19 @@ class DetectorBankGui(QMainWindow):
         mode = self._viewTabs.tabText(idx).lower()
         self._switchView(mode)
             
+    def _openGuiDocs(self):
+        """ Open GUI docs in browser """
+        QDesktopServices.openUrl(QUrl("https://keziah55.github.io/detectorbank-gui/"))
+        
+    def _openDocs(self):
+        """ Open DetectorBank docs in browser """
+        QDesktopServices.openUrl(QUrl("https://keziah55.github.io/DetectorBank/"))
+        
+    def _about(self):
+        msg = "DetectorBank GUI\n(C) Keziah Milligan"
+        QMessageBox.about(self, "DetectorBank GUI", msg)
+        
+        
     def _createActions(self):
         self.openAudioFileAction = QAction(
             "&Open audio file", self, shortcut=QKeySequence.Open, 
@@ -270,6 +283,12 @@ class DetectorBankGui(QMainWindow):
             triggered=self.close)
         if (icon := QIcon.fromTheme("application-exit")) is not None:
             self.exitAction.setIcon(icon)
+            
+        self.openGuiDocsAction = QAction("&Open DetectorBank GUI documentation", self,
+                                         triggered=self._openGuiDocs)
+        self.openDocsAction = QAction("&Open DetectorBank documentation", self,
+                                      triggered=self._openDocs)
+        self.aboutAction = QAction("&About", self, triggered=self._about)
             
     def _createToolBars(self):
         
@@ -296,6 +315,12 @@ class DetectorBankGui(QMainWindow):
         
         self.analyseMenu = self.menuBar().addMenu("&Analysis")
         self.analyseMenu.addAction(self.analyseAction)
+        
+        self.helpMenu = self.menuBar().addMenu("&Help")
+        self.helpMenu.addActions([self.openGuiDocsAction, self.openDocsAction])
+        self.helpMenu.addSeparator()
+        self.helpMenu.addAction(self.aboutAction)
+        
         
     def _setTemporaryStatus(self, msg):
         self.statusBar().showMessage(msg, self._statusTimeout)
