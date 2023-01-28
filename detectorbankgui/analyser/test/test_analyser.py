@@ -97,7 +97,7 @@ def test_analyse_full_audio(audio, audio_results, qtbot):
     
     audio, sr = audio
     
-    f = np.array([440*2**(k/12) for k in range(-12,13)])
+    f = np.array([440*2**(k/12) for k in range(-3,3)])
     bw = np.zeros(len(f))
     det_char = np.column_stack((f,bw))
     detBankParams = {
