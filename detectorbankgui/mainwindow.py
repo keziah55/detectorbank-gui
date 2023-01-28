@@ -155,11 +155,11 @@ class DetectorBankGui(QMainWindow):
         if self.audioplot.audio is None:
             QMessageBox.warning(self, errorMsgTitle, "Please select an audio input file")
             return
-        try:
-            saveDir = self.argswidget.getSaveDir()
-        except InvalidArgException as exc:
-            QMessageBox.warning(self, errorMsgTitle, str(exc))
-            return
+        # try:
+        #     saveDir = self.argswidget.getSaveDir()
+        # except InvalidArgException as exc:
+        #     QMessageBox.warning(self, errorMsgTitle, str(exc))
+        #     return
         
         self._setTemporaryStatus(f"Starting analysis of {self.audioplot.audioFilePath}")
         
@@ -168,8 +168,7 @@ class DetectorBankGui(QMainWindow):
             self.sr, 
             params, 
             self.audioplot.getSegments(), 
-            self.argswidget.getDownsampleFactor(), 
-            saveDir)
+            self.argswidget.getDownsampleFactor())
         
         self._progressBar.setMaximum(numSamples)
         self._progressQueue.clear()

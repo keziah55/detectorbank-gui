@@ -40,14 +40,14 @@ class _ExtraOptionsWidget(QWidget):
         row = 0
         self._addRow(row, self.downsampleBox, "Plot downsample factor")
         
-        self._saveDir = None
-        self.saveDirButton = ElideButton()
-        self.saveDirButton.setText("Select directory...")
-        self.saveDirButton.clicked.connect(self._selectSaveDir)
-        self.saveDirButton.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
-        self.saveDirButton.setLineWidth(3)
-        row += 1
-        self.saveCheckBox, _, _ = self._addRow(row, self.saveDirButton, "Save results as csv", True)
+        # self._saveDir = None
+        # self.saveDirButton = ElideButton()
+        # self.saveDirButton.setText("Select directory...")
+        # self.saveDirButton.clicked.connect(self._selectSaveDir)
+        # self.saveDirButton.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
+        # self.saveDirButton.setLineWidth(3)
+        # row += 1
+        # self.saveCheckBox, _, _ = self._addRow(row, self.saveDirButton, "Save results as csv", True)
         
         self.layout.setRowStretch(self.layout.rowCount(), 1)
         
@@ -82,19 +82,19 @@ class _ExtraOptionsWidget(QWidget):
         """ Return current 'downsample factor' box value """
         return self.downsampleBox.value()
     
-    def _selectSaveDir(self):
-        dirname = QFileDialog.getExistingDirectory(
-            self, "Select directory to save to", os.path.expanduser("~"))
-        if dirname:
-            self._saveDir = dirname
-            self.saveDirButton.setText(dirname)
-            self.saveCheckBox.setChecked(True)
-        else:
-            self._saveDir = None
+    # def _selectSaveDir(self):
+    #     dirname = QFileDialog.getExistingDirectory(
+    #         self, "Select directory to save to", os.path.expanduser("~"))
+    #     if dirname:
+    #         self._saveDir = dirname
+    #         self.saveDirButton.setText(dirname)
+    #         self.saveCheckBox.setChecked(True)
+    #     else:
+    #         self._saveDir = None
             
-    def getSaveDir(self):
-        """ Get path of dir to save csv to """
-        if self.saveCheckBox.isChecked() and self._saveDir is None:
-            msg = "'Save results as csv' is selected, but no directory has been chosen"
-            raise InvalidArgException(msg)
-        return self._saveDir # path or None
+    # def getSaveDir(self):
+    #     """ Get path of dir to save csv to """
+    #     if self.saveCheckBox.isChecked() and self._saveDir is None:
+    #         msg = "'Save results as csv' is selected, but no directory has been chosen"
+    #         raise InvalidArgException(msg)
+    #     return self._saveDir # path or None

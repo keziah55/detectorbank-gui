@@ -10,15 +10,34 @@ threaded.
 from qtpy.QtCore import QObject, Signal
 from detectorbank import DetectorBank, DetectorCache, Producer
 import numpy as np
-import os.path
 from functools import partial
 
 class AnalysisWorker(QObject):
+    """ Object to perform analysis for a given audio segment
+    
+        Paremeters
+        ----------
+        audio : np.ndarray
+            Array of audio samples
+        sr : int
+            Sample rate of audio
+        params : dict
+            Dict of DetectorBank parameters
+        n0 : int, optional
+            If provided, start analysis from this sample, rather than beginning of `audio`
+        n1 : int, optional
+            If provided, stop analysis at this sample, rather than end of `audio`
+        subsample : int, optional
+            If provided, subsample result by this factor
+        progressIncrement : int
+            Emit `progress` signal after every `progressIncrement` samples have
+            been processed (after downsampling)
+    """
     
     progress = Signal(int)
     """ **signal** progress(int `progressIncrement`)
     
-        Emitted every time `progressIncrement` samples has been processed.
+        Emitted every time `progressIncrement`*`subsample` samples has been processed.
     """
     
     finished = Signal(object)
@@ -27,7 +46,7 @@ class AnalysisWorker(QObject):
         Emitted when the analysis has finished, with the array of results.
     """
     
-    def __init__(self, audio, sr, params, n0=None, n1=None, downsample=1, progressIncrement=1):
+    def __init__(self, audio, sr, params, n0=None, n1=None, subsample=1, progressIncrement=1):
         super().__init__()
         
         self.cacheSegDuration = 30 # cache segment size in ms
@@ -42,9 +61,9 @@ class AnalysisWorker(QObject):
             n1 = len(self.audio)
         
         self.channels = self._makeDetectorCache(params, audioSlice=(n0, n1))
-        self.downsample = downsample
+        self.subsample = int(subsample)
         self.progressIncrement = progressIncrement
-        self.result = np.zeros((self.channels, (n1-n0)//downsample))
+        self.result = np.zeros((self.channels, (n1-n0)//subsample))
         
     def _makeDetectorCache(self, params, audioSlice=None):
         features = params['method'] | params['freqNorm'] | params['ampNorm']
@@ -57,14 +76,14 @@ class AnalysisWorker(QObject):
                 params['damping'], params['gain'])
         self.det = DetectorBank(*args)
         self.p = Producer(self.det)
-        segSize = self.cacheSegDuration * self.sr
+        self.segSize = self.cacheSegDuration * self.sr // 1000
         numSegs = 10
-        self.cache = DetectorCache(self.p, numSegs, segSize)
+        self.cache = DetectorCache(self.p, numSegs, self.segSize)
         channels = self.det.getChans()
         return channels
         
     def start(self):
-        
+        """ Get subsampled results """
         n, idx = 0, 0
         
         while n < self.cache.end() and idx < self.result.shape[1]:
@@ -78,6 +97,13 @@ class AnalysisWorker(QObject):
         self.finished.emit(self.result)
         
 class Analyser(QObject):
+    """ Object to manage DetectorBank calculations for audio regions.
+    
+        Parameters
+        ----------
+        resultWidget : HopfPlot
+            Widget for plotting results
+    """
     
     progress = Signal(int)
     """ **signal** progress(int `samples`)
@@ -93,7 +119,6 @@ class Analyser(QObject):
     
     def __init__(self, resultWidget):
         super().__init__()
-        
         self.hopfplot = resultWidget
         
     def start(self):
@@ -101,7 +126,7 @@ class Analyser(QObject):
         for analyser in self.analysers:
             analyser.start()
         
-    def setParams(self, audio, sr, detBankParams, segments, downsample, saveDir=None) -> int:
+    def setParams(self, audio, sr, detBankParams, segments, subsample) -> int:
         """ Set all parameters needed for analysis 
         
             Parameters
@@ -114,20 +139,14 @@ class Analyser(QObject):
                 Dict of DetectorBank parameters, as returned by ArgsWidget.getArgs
             segments : list
                 List of segments, as returned by AudioPlot.getSegments
-            downsample : int
-                Downsample factor
-            saveDir : str, optional
-                If provided, write results to this directory
+            subsample : int
+                subsample factor
                 
             Returns
             -------
             numSamples : int
                 Total number of samples that will be analysed, after downsampling
         """
-        
-        if saveDir is not None:
-            np.savetxt(os.path.join(saveDir, "frequency_bandwidth.txt"), detBankParams['detChars'])
-        
         self.analysers = [] 
         self._finished = [] # list of completed analysers (can't remove from lst/dict, as they are blocking)
         idxx = self.hopfplot.addPlots(detBankParams['detChars'][:,0], segments)
@@ -136,25 +155,22 @@ class Analyser(QObject):
             n0, n1 = segment.samples
             numSamples += (n1-n0)
             
-            analyser = AnalysisWorker(audio, sr, detBankParams, n0, n1, downsample)
+            analyser = AnalysisWorker(audio, sr, detBankParams, n0, n1, subsample)
             
             self.analysers.append(analyser)
             
             analyser.progress.connect(self.progress)
             
             kwargs = {'key':idx}
-            if saveDir is not None:
-                kwargs['fname'] = os.path.join(saveDir, f"{n0}-{n1}_samples.txt")
             analyser.finished.connect(partial(self._analyserFinished, **kwargs))
             
-        numSamples //= downsample
+        numSamples //= subsample
             
         return numSamples
         
-    def _analyserFinished(self, result, key, fname=None):
+    def _analyserFinished(self, result, key):
+        """ Plot `result` and check if all analysers are finished. """
         self.hopfplot.addData(key, result)
-        if fname is not None:
-            np.savetxt(fname, result)
         self._finished.append(key)
         
         if len(self._finished) == len(self.analysers):
