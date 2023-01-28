@@ -13,10 +13,7 @@ from .analyser import Analyser
 from .argswidget import ArgsWidget
 from .hopfplot import HopfPlot
 from .invalidargexception import InvalidArgException
-import os
-from functools import partial
 from collections import deque, namedtuple
-import numpy as np
 
 SegmentAnalysis = namedtuple("SegmentAnalysis", ["segement", "analyser"])
 WidgetView = namedtuple("WidgetView", ["dockwidget", "viewmode"])
@@ -40,6 +37,8 @@ class DetectorBankGui(QMainWindow):
         # might need to come up with a better solution than this...
         self.hopfplot = HopfPlot(self)
         
+        self.analyser = Analyser(self.hopfplot)
+        
         self.statusBar()
         self._statusTimeout = 1500
         
@@ -48,7 +47,10 @@ class DetectorBankGui(QMainWindow):
         self._progressQueue = deque()
         
         self.audioplot.statusMessage.connect(self._setTemporaryStatus)
-        self.audioplot.audioFileOpened.connect(self._setAudioSr)
+        self.audioplot.audioFileOpened.connect(self.setSampleRate)
+        
+        self.analyser.progress.connect(self._incrementProgress)
+        self.analyser.finished.connect(self._maxProgress)
         
         widgets = {"audioinput":('Audio Input', self.audioplot, 'left', 'input'),
                    "args":('Parameters',self.argswidget, 'left', 'input'),
@@ -137,8 +139,7 @@ class DetectorBankGui(QMainWindow):
         self._running = value
         self.runToolBar.setEnabled(not value)
         
-    def _setAudioSr(self, audio, sr):
-        self.audio = audio
+    def setSampleRate(self, sr):
         self.sr = sr
             
     def _doAnalysis(self):
@@ -151,7 +152,7 @@ class DetectorBankGui(QMainWindow):
         except InvalidArgException as exc:
             QMessageBox.warning(self, errorMsgTitle, str(exc))
             return
-        if self.audioplot.audioFilePath is None:
+        if self.audioplot.audio is None:
             QMessageBox.warning(self, errorMsgTitle, "Please select an audio input file")
             return
         try:
@@ -162,54 +163,31 @@ class DetectorBankGui(QMainWindow):
         
         self._setTemporaryStatus(f"Starting analysis of {self.audioplot.audioFilePath}")
         
-        downsample = self.argswidget.getDownsampleFactor()
+        numSamples = self.analyser.setParams(
+            self.audioplot.audio, 
+            self.sr, 
+            params, 
+            self.audioplot.getSegments(), 
+            self.argswidget.getDownsampleFactor(), 
+            saveDir)
         
-        if saveDir is not None:
-            np.savetxt(os.path.join(saveDir, "frequency_bandwidth.txt"), params['detChars'])
-        
-        self.analysers = [] 
-        segments = self.audioplot.getSegments()
-        idxx = self.hopfplot.addPlots(params['detChars'][:,0], segments)
-        numSamples = 0
-        for idx, segment in zip(idxx, segments):
-            n0, n1 = segment.samples
-            numSamples += (n1-n0)
-            
-            analyser = Analyser(self.audio, self.sr, params, n0, n1, downsample)
-            
-            self.analysers.append(analyser)
-            
-            analyser.progress.connect(self._incrementProgress)
-            kwargs = {'key':idx}
-            if saveDir is not None:
-                kwargs['fname'] = os.path.join(saveDir, f"{n0}-{n1}_samples.txt")
-            analyser.finished.connect(partial(self._analyserFinished, **kwargs))
-            
-        numSamples //= downsample
         self._progressBar.setMaximum(numSamples)
         self._progressQueue.clear()
         
-        for analyser in self.analysers:
-            analyser.start()
+        self.analyser.start()
             
-        # analyser now not threaded, so all should be done by now
-        # if re-introducing threading here, move this to `_analyserFinished`
-        self._progressBar.setValue(self._progressBar.maximum())
-        
-    def _analyserFinished(self, result, key, fname=None):
-        self.hopfplot.addData(key, result)
-        if fname is not None:
-            np.savetxt(fname, result)
-        
     def _incrementProgress(self, inc):
         self._progressQueue.append(inc)
         self._checkProgressQueue()
+        
+    def _maxProgress(self):
+        self._progressBar.setValue(self._progressBar.maximum())
         
     def _checkProgressQueue(self):
         while len(self._progressQueue) > 0:
             inc = self._progressQueue.popleft()
             self._progressBar.setValue(self._progressBar.value()+inc)
-        
+            
     def createDockWidget(self, widget, area, title, viewmode, key=None):
         if area in self.dockAreas:
             area = self.dockAreas[area]

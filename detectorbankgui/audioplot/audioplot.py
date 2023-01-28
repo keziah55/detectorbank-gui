@@ -58,8 +58,8 @@ class AudioPlotWidget(QWidget):
         Emitted with a message for the status bar.
     """
     
-    audioFileOpened = Signal(object, int)
-    """ **signal** audioFileOpened(np.ndarray `audio`, int `sr`)
+    audioFileOpened = Signal(int)
+    """ **signal** audioFileOpened(int `sr`)
     
         Emitted when audio file is read.
     """
@@ -164,7 +164,7 @@ class AudioPlotWidget(QWidget):
             self.removeAllSegments()
             self._openAudioDir = os.path.dirname(fname)
             self.audioFilePath = fname
-            self.audioFileOpened.emit(self.audio, self.sr)
+            self.audioFileOpened.emit(self.sr)
             self.statusMessage.emit(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
         
     def setAudio(self, audio, sr):
