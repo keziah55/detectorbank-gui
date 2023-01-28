@@ -94,7 +94,9 @@ class TestArgsWidget:
             args = self.widget.getArgs()
         assert "Frequencies and bandwidths" in str(exc)
                 
-        qtbot.mouseClick(self.widget.restoreDefaultsButton, Qt.LeftButton)
+        assert "default" in self.widget.loadProfileBox.items
+        
+        self.widget.loadProfileBox.setCurrentText("default")
         qtbot.wait(50)
         
         for key, test_vals in test_values.items():

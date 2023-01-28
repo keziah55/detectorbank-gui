@@ -81,8 +81,7 @@ class DetBankArgsWidget(QScrollArea):
         return getattr(self.widget, name)
     
 class _DetBankArgsWidget(QWidget):
-    def __init__(self, parent=None, sr=None, profile=None, numThreads=None, freq=None, 
-                 bw=None, method=None, freqNorm=None, ampNorm=None, damping=None, gain=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         
         self.srWidget = ValueLabel(suffix=" Hz")
@@ -134,7 +133,6 @@ class _DetBankArgsWidget(QWidget):
                 self.ampNormWidget, "Amplitude normalization", 
                 "Whether to normalize amplitude response. Default is unnormalized")
             }
-        
         
         # profile widgets
         self.loadProfileBox = ComboBox()
@@ -195,7 +193,7 @@ class _DetBankArgsWidget(QWidget):
         
         self.setLayout(layout)
         
-        self._setDefaults()
+        self._ensureDefaultExists()
         
     @property
     def currentProfile(self):
@@ -224,15 +222,11 @@ class _DetBankArgsWidget(QWidget):
         if not self._ignoreValueChanged:
             self.currentProfileAltered = True
         
-    # def _loadProfile(self):
-    #     """ Show load dialog and load profile """
-    #     dialog = LoadDialog(parent=self, currentProfile=self._profile)
-    #     reply = dialog.exec_()
-    #     if reply == QDialog.Accepted:
-    #         name = dialog.getProfileName()
-    #         self.loadProfile(name)
-    #     return name
-    
+    def _ensureDefaultExists(self):
+        if "default" not in ProfileManager().profiles:
+            params = self._getDefaultArgs()
+            self.saveProfile("default", params)
+        
     def _saveProfile(self):
         """ Show save dialog and save profile """
         dialog = SaveDialog(parent=self)
@@ -246,6 +240,7 @@ class _DetBankArgsWidget(QWidget):
     def loadProfile(self, profile):
         if profile == "None":
             return
+        
         self.currentProfile = profile
         
         prof = ProfileManager().getProfile(profile)
@@ -261,12 +256,13 @@ class _DetBankArgsWidget(QWidget):
             self.setParams(**params)
             self._ignoreValueChanged = False
     
-    def saveProfile(self, name):
-        try:
-            params = self.getArgs()
-        except InvalidArgException as exc:
-            QMessageBox.warning(self, "Cannot save profile", str(exc))
-            return
+    def saveProfile(self, name, params=None):
+        if params is None:
+            try:
+                params = self.getArgs()
+            except InvalidArgException as exc:
+                QMessageBox.warning(self, "Cannot save profile", str(exc))
+                return
             
         features = params['method'] | params['freqNorm'] | params['ampNorm']
         audio = np.zeros(1)
@@ -274,6 +270,10 @@ class _DetBankArgsWidget(QWidget):
                 features, params['damping'], params['gain'])
         det = DetectorBank(*args)
         det.saveProfile(name)
+        
+        # add to profile list
+        self.loadProfileBox.addItem(name)
+        
         
     def _defaultBoxClicked(self, state):
         if state == Qt.Checked:
@@ -301,10 +301,11 @@ class _DetBankArgsWidget(QWidget):
             if (param := self.widgets.get(name, None)) is not None:
                 param.widget.setValue(value)
     
-    def getArgs(self) -> tuple[dict, list]:
-        """ Return dict of DetectorBank args and list of any invalid args.
+    def getArgs(self) -> dict:
+        """ Return dict of DetectorBank args.
         
-            If any arg is None, it will be considered invalid.
+            If any arg is None, it will be considered invalid and InvalidArgException
+            will be raised.
         """
         ret = {}
         invalid = []
@@ -322,25 +323,28 @@ class _DetBankArgsWidget(QWidget):
             raise InvalidArgException(msg)
         return ret
     
-    def _setDefaults(self):
+    @staticmethod
+    def _getDefaultArgs():
+        """ Return dict of default values for all args """
         
-        # num threads
-        numCores = os.cpu_count()
-        self.threadsWidget.setMinimum(1)
-        self.threadsWidget.setMaximum(numCores)
-        self.threadsWidget.setValue(numCores)
+        f = np.array([440*2**(k/12) for k in range(-48,40)])
+        bw = np.zeros(len(f))
+        detChars = np.column_stack((f,bw))
         
-        # damping
-        self.dampingWidget.setValue(0.0001)
+        params = {
+            "sr":48000, 
+            "numThreads":os.cpu_count(), 
+            "detChars":detChars,
+            "damping":0.0001,
+            "gain":25,
+            "method":DetectorBank.runge_kutta,
+            "freqNorm":DetectorBank.freq_unnormalized,
+            "ampNorm":DetectorBank.amp_unnormalized
+            }
+        return params
         
-        # gain
-        self.gainWidget.setValue(25)
-        
-        # features
-        for widget in [self.methodWidget, self.freqNormWidget, self.ampNormWidget]:
-            widget.setCurrentIndex(0)
-            
     def _writeDownsampleFactor(self):
+        """ Write subsample value to config file """
         settings = Settings()
         settings.setValue("plot/downsample", self.downsampleBox.value())
         
