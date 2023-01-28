@@ -55,4 +55,41 @@ def test_analyser(audio2, audio2_results, qtbot):
         result = results_widget.results[key]
         
         assert np.all(np.isclose(result, expected, atol=0.01))
+        
+def test_subsample(audio2, audio2_results, qtbot):
+    results_widget = MockResultsWidget()
+    analyser = Analyser(results_widget)
+    
+    audio, sr = audio2
+    
+    f = np.array([440*2**(k/12) for k in range(-12,13)])
+    bw = np.zeros(len(f))
+    det_char = np.column_stack((f,bw))
+    detBankParams = {
+        "numThreads":os.cpu_count(),
+        "damping":0.0001,
+        "gain":25,
+        "detChars":det_char,
+        "method":DetectorBank.runge_kutta,
+        "freqNorm":DetectorBank.freq_unnormalized,
+        "ampNorm":DetectorBank.amp_unnormalized
+        }
+    
+    segments = [Segment(0, 48000*4), Segment(48000*5, 48000*9)]
+    subsample = 10000
+    analyser.setParams(audio, sr, detBankParams, segments, subsample)
+    
+    with qtbot.waitSignal(analyser.finished, timeout=30000):
+        analyser.start()
+        
+    for result_file in audio2_results:
+        fname = os.path.basename(result_file)
+        key = int(os.path.splitext(fname)[0])
+        
+        expected = np.loadtxt(result_file)
+        
+        result = results_widget.results[key]
+        
+        assert result.shape[1] < expected.shape[1]
+        assert result.shape[1]  == expected.shape[1] // 10
     

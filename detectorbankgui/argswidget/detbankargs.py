@@ -22,6 +22,7 @@ from collections import namedtuple
 
 @dataclass
 class Parameter:
+    """ Dataclass to store form widgets and associated data """
     widget: QWidget # must have `value` property
     name: str
     toolTip: str = None
@@ -45,7 +46,10 @@ class Parameter:
 Feature = namedtuple("Feature", ["name", "value"]) # used when making combobox of DB features
 
 class FreqBwButton(ElideMixin, QPushButton):
+    """ Button to select/show frequencies and bandwidths 
     
+        Has same API as 'value widgets'
+    """
     valueChanged = Signal()
     
     def __init__(self, *args, **kwargs):
@@ -70,6 +74,7 @@ class FreqBwButton(ElideMixin, QPushButton):
                 self.valueChanged.emit()
 
 class DetBankArgsWidget(QScrollArea):
+    """ Scroll area containing DetectorBank args and additional options """
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.widget = _DetBankArgsWidget(*args, **kwargs)
@@ -81,6 +86,8 @@ class DetBankArgsWidget(QScrollArea):
         return getattr(self.widget, name)
     
 class _DetBankArgsWidget(QWidget):
+    """ Widget containing  """
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         
