@@ -8,6 +8,12 @@ def _get_data_path():
     return os.path.join(p, "test", "data")
 
 @pytest.fixture
+def audio2_results():
+    p = _get_data_path()
+    csv = [os.path.join(p, f) for f in os.listdir(p) if os.path.splitext(f)[1]=='.csv']
+    return csv
+
+@pytest.fixture
 def audiofile():
     p = _get_data_path()
     return os.path.join(p, "a4.wav")
@@ -20,6 +26,10 @@ def audiofile2():
 @pytest.fixture
 def audio(audiofile):
     return read_audio(audiofile)
+
+@pytest.fixture
+def audio2(audiofile2):
+    return read_audio(audiofile2)
 
 @pytest.fixture
 def configfile():

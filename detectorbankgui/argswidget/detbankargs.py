@@ -6,9 +6,7 @@ Form to edit DetectorBank args
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, QDialog, 
                             QSizePolicy, QScrollArea, QMessageBox, QSpinBox, QCheckBox)
 from qtpy.QtCore import Qt, Slot, Signal
-from qtpy.QtGui import QFont
 from customQObjects.widgets import ElideMixin, GroupBox, ComboBox
-from customQObjects.widgets.combobox import ComboBoxModel as _ComboBoxModel
 from customQObjects.core import Settings
 from customQObjects.gui import getIconFromTheme
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
@@ -21,27 +19,6 @@ from detectorbank import DetectorBank
 import os
 from dataclasses import dataclass
 from collections import namedtuple
-
-
-class ComboBoxModel(_ComboBoxModel):
-    
-    def data(self, idx, role):
-        """ Return the data at index `idx`. 
-        
-            If `role` is `Qt.DisplayRole`, return the NamedTuple's `name`.
-            If `role` is `Qt.UserRole`, return the NamedTuple's `value`.
-        """
-        if not idx.isValid():
-            return None
-        
-        value = self.values[idx.row()]
-        
-        if role == Qt.DisplayRole:
-            s = value.name
-            if value.edited:
-                s += " *"
-            return s
-
 
 @dataclass
 class Parameter:
@@ -66,8 +43,6 @@ class Parameter:
             return value
         
 Feature = namedtuple("Feature", ["name", "value"]) # used when making combobox of DB features
-
-ProfileComboBoxItem = namedtuple("Profile", ["name", "edited"])
 
 class FreqBwButton(ElideMixin, QPushButton):
     

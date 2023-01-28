@@ -90,7 +90,7 @@ class AnalysisWorker(QObject):
             for k in range(self.channels):
                 self.result[k][idx] = self.cache[k,n]
             idx += 1
-            n += self.downsample
+            n += self.subsample
             if idx % self.progressIncrement == 0:
                 self.progress.emit(self.progressIncrement)
             
@@ -172,6 +172,8 @@ class Analyser(QObject):
         """ Plot `result` and check if all analysers are finished. """
         self.hopfplot.addData(key, result)
         self._finished.append(key)
+        
+        # np.savetxt(f"/home/keziah/projects/detectorbank-gui/detectorbankgui/test/data/{key}.csv",result)
         
         if len(self._finished) == len(self.analysers):
             self.finished.emit()
