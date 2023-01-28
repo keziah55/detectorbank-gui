@@ -63,6 +63,8 @@ class TestArgsWidget:
         
     def test_form(self, setup_load_profile, qtbot):
         
+        self.widget.loadProfileBox.setCurrentText("_test_profile2")
+        
         test_values = {
             "sr":{"value":48000, "expected":"48000", "default":None},
             "numThreads":{"value":4, "default":os.cpu_count()},
@@ -79,8 +81,6 @@ class TestArgsWidget:
                        "default":DetectorBank.amp_unnormalized},
             }
         
-        self.widget.loadProfileBox.setCurrentText("None")
-        
         for key, test_vals in test_values.items():
             param = self.widget.widgets[key]
             value = test_vals['value']
@@ -92,15 +92,23 @@ class TestArgsWidget:
             if key == "sr":
                 assert param.widget.text() == f"{expected} Hz"
             
+        # set invalid params 
+        f = np.array([440*2**(k/12) for k in range(-12,12)])
+        bw = np.zeros(len(f))
+        bw.fill(1.2)
+        det_char = np.column_stack((f,bw))
+        param = self.widget.widgets['detChars']
+        with qtbot.waitSignal(param.widget.valueChanged):
+            param.widget.setValue(det_char)
+        
+        expected = "Central difference method can only be used with minimum bandwidth detectors (0Hz)"
         with pytest.raises(InvalidArgException) as exc:
             args = self.widget.getArgs()
-        assert "Frequencies and bandwidths" in str(exc)
+        assert expected in str(exc) 
                 
         assert "default" in self.widget.loadProfileBox.items
         
-        qtbot.wait(3000)
         self.widget.loadProfileBox.setCurrentText("default")
-        qtbot.wait(3000)
         
         for key, test_vals in test_values.items():
             param = self.widget.widgets[key]
@@ -142,27 +150,43 @@ class TestArgsWidget:
         profile_manager = ProfileManager(self.config_file)
         assert profile_name in profile_manager.profiles
         
-    @pytest.mark.skip("needs rewritten")
-    def test_load_profile(self, setup_load_profile, qtbot, monkeypatch):
-        profile_name = "_test_profile2"
-        def patch_getProfileName(*args, **kwargs):
-            return profile_name, False
-        monkeypatch.setattr(LoadDialog, "exec_", lambda *args: QDialog.Accepted)
-        monkeypatch.setattr(LoadDialog, "getProfileName", patch_getProfileName)
+    def test_reload_profile(self, setup_load_profile, qtbot, monkeypatch):
+        profile_name = "default"
         
-        with qtbot.waitSignal(self.widget.loadProfileButton.clicked):
-            qtbot.mouseClick(self.widget.loadProfileButton, Qt.LeftButton)
-            
-        f = np.array([440*2**(k/12) for k in range(2,11)])
+        self.widget.loadProfileBox.setCurrentText(profile_name)
+        assert self.widget.reloadProfileButton.isEnabled() is False
+        
+        f = np.array([440*2**(k/12) for k in range(-12,12)])
         bw = np.zeros(len(f))
-        bw.fill(2)
         det_char = np.column_stack((f,bw))
+        test_values = {
+            "sr":48000,
+            "numThreads":4,
+            "damping":0.0003,
+            "gain":20,
+            "detChars":det_char,
+            "method":"Central difference",
+            "freqNorm":"Search normalized",
+            "ampNorm":"Normalized"
+            }
         
+        for key, value in test_values.items():
+            param = self.widget.widgets[key]
+            with qtbot.waitSignal(param.widget.valueChanged):
+                param.widget.setValue(value)
+                
+        assert self.widget.reloadProfileButton.isEnabled()
+        with qtbot.waitSignal(self.widget.reloadProfileButton.clicked):
+            qtbot.mouseClick(self.widget.reloadProfileButton, Qt.LeftButton)
+            
+        f = np.array([440*2**(k/12) for k in range(-48,40)])
+        bw = np.zeros(len(f))
+        det_char = np.column_stack((f,bw))
         expected_values = {
             "sr":48000.0,
-            "numThreads":4,
-            "damping":0.0002,
-            "gain":16,
+            "numThreads":os.cpu_count(),
+            "damping":0.0001,
+            "gain":25,
             "detChars":det_char,
             "method":DetectorBank.runge_kutta,
             "freqNorm":DetectorBank.freq_unnormalized,

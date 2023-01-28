@@ -203,8 +203,10 @@ class FrequencyDialog(QDialog):
         # if any row has a None value and a non-None value, table is invalid
         # (if both items in row are None, can be skiped)
         for row in range(self.table.rowCount()):
-            boolF = self.table.item(row, 0) is not None
-            boolBw = self.table.item(row, 1) is not None
+            freqItem = self.table.item(row, 0)
+            bwItem = self.table.item(row, 1)
+            boolF = freqItem is not None and freqItem.text().strip() != ""
+            boolBw = bwItem is not None and bwItem.text().strip() != ""
             if boolF ^ boolBw:
                 return False
         return True

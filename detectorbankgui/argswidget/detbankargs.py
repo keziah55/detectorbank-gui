@@ -243,18 +243,6 @@ class _DetBankArgsWidget(QWidget):
     @currentProfile.setter
     def currentProfile(self, name):
         self._profile = name
-        # if name is not None:
-        #     print("currentProfile setting currentProfileAltered to false")
-        #     self.currentProfileAltered = False
-        # else:
-        #     print("currentProfile setting currentProfileAltered to true")
-        #     self.currentProfileAltered = True
-        # if name is None:
-        #     name = "None"
-        # print(f"currentText={self.loadProfileBox.currentText()}; {name=}")
-        # if self.loadProfileBox.currentText() != name:
-        #     print(f"set text to {name}")
-        #     self.loadProfileBox.setCurrentText(name)
         
     @property
     def currentProfileAltered(self):
@@ -386,6 +374,9 @@ class _DetBankArgsWidget(QWidget):
         if len(invalid) > 0:
             msg = (f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
                     "Please set valid values and try again.")
+            raise InvalidArgException(msg)
+        if ret['method'] == DetectorBank.central_difference and np.count_nonzero(ret['detChars'][:,1]) > 0:
+            msg = "Central difference method can only be used with minimum bandwidth detectors (0Hz)"
             raise InvalidArgException(msg)
         return ret
     
