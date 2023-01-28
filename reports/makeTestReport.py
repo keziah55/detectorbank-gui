@@ -520,6 +520,7 @@ class ReportWriter:
         html = self.makeReport()
         with open(self.out, "w") as fileobj:
             fileobj.write(html)
+        print(f"Test report written to {self.out}")
     
 if __name__ == "__main__":
     
