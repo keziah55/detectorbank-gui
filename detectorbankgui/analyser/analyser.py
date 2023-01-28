@@ -173,7 +173,5 @@ class Analyser(QObject):
         self.hopfplot.addData(key, result)
         self._finished.append(key)
         
-        # np.savetxt(f"/home/keziah/projects/detectorbank-gui/detectorbankgui/test/data/{key}.csv",result)
-        
         if len(self._finished) == len(self.analysers):
             self.finished.emit()
