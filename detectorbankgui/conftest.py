@@ -8,9 +8,15 @@ def _get_data_path():
     return os.path.join(p, "test", "data")
 
 @pytest.fixture
+def audio_results():
+    p = _get_data_path()
+    csv = os.path.join(p, 'a4.csv')
+    return csv
+
+@pytest.fixture
 def audio2_results():
     p = _get_data_path()
-    csv = [os.path.join(p, f) for f in os.listdir(p) if os.path.splitext(f)[1]=='.csv']
+    csv = [os.path.join(p, f) for f in ['0.csv', '1.csv']]
     return csv
 
 @pytest.fixture

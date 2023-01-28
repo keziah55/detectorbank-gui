@@ -1,4 +1,4 @@
-from detectorbankgui.analyser import Analyser
+from detectorbankgui.analyser.analyser import Analyser, AnalysisWorker
 from detectorbank import DetectorBank
 import numpy as np
 import os
@@ -92,4 +92,28 @@ def test_subsample(audio2, audio2_results, qtbot):
         
         assert result.shape[1] < expected.shape[1]
         assert result.shape[1]  == expected.shape[1] // 10
+        
+def test_analyse_full_audio(audio, audio_results, qtbot):
     
+    audio, sr = audio
+    
+    f = np.array([440*2**(k/12) for k in range(-12,13)])
+    bw = np.zeros(len(f))
+    det_char = np.column_stack((f,bw))
+    detBankParams = {
+        "numThreads":os.cpu_count(),
+        "damping":0.0001,
+        "gain":25,
+        "detChars":det_char,
+        "method":DetectorBank.runge_kutta,
+        "freqNorm":DetectorBank.freq_unnormalized,
+        "ampNorm":DetectorBank.amp_unnormalized
+        }
+    
+    analyser = AnalysisWorker(audio, sr, detBankParams)
+    
+    with qtbot.waitSignal(analyser.finished, timeout=30000):
+        analyser.start()
+        
+    expected = np.loadtxt(audio_results)
+    assert np.all(np.isclose(analyser.result, expected, atol=0.01))
