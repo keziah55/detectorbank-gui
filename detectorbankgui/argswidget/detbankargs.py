@@ -4,10 +4,12 @@
 Form to edit DetectorBank args
 """
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, QDialog, 
-                            QSizePolicy,QGridLayout, QScrollArea, QMessageBox)
+                            QSizePolicy,QGridLayout, QScrollArea, QMessageBox,
+                            QSpinBox, QHBoxLayout, QCheckBox)
 from qtpy.QtCore import Qt, Slot, Signal
-from customQObjects.widgets import ElideMixin, GroupBox
+from customQObjects.widgets import ElideMixin, GroupBox, ComboBox
 from customQObjects.core import Settings
+from customQObjects.gui import getIconFromTheme
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
 from .frequencydialog import FrequencyDialog
 from .profiledialog import LoadDialog, SaveDialog
@@ -21,16 +23,13 @@ from collections import namedtuple
 
 @dataclass
 class Parameter:
-    # name: str
     widget: QWidget # must have `value` property
-    prettyName: str #= None
+    name: str
     toolTip: str = None
     castType: object = None
 
     def __post_init__(self):
-        # if self.prettyName is None:
-        #     self.prettyName = self.name
-        self.label = QLabel(self.prettyName)
+        self.label = QLabel(self.name)
         self.label.setAlignment(Qt.AlignRight)
         for widget in [self.label, self.widget]:
             widget.setToolTip(self.toolTip)
@@ -96,7 +95,7 @@ class DetBankArgsWidget(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        # self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)
@@ -156,36 +155,65 @@ class _DetBankArgsWidget(QWidget):
                 "Whether to normalize amplitude response. Default is unnormalized")
             }
         
-        form = QGridLayout()
-        for row, param in enumerate(self.widgets.values()):
-            form.addWidget(param.label, row, 0)
-            form.addWidget(param.widget, row, 1)
-            param.widget.valueChanged.connect(self._valueChanged)
-        form.setRowStretch(row+1, 10)
         
-        self.restoreDefaultsButton = QPushButton("Restore defaults")
-        self.loadProfileButton = QPushButton("Load")
-        self.saveProfileButton = QPushButton("Save")
         self.currentProfileLabel = ProfileLabel()
+        
+        self.loadProfileBox = ComboBox()
+        self.loadProfileBox.addItems(["None"] + ProfileManager().profiles)
+        profileLabel = QLabel("Profile")
+        profileLabel.setAlignment(Qt.AlignRight)
+        self.defaultCheckBox = QCheckBox("Set as default")
+        self.defaultCheckBox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        
+        self.saveProfileButton = QPushButton()
+        if (icon:=getIconFromTheme("document-save")) is not None:
+            self.saveProfileButton.setIcon(icon)
+        else:
+            self.saveProfileButton.setText("Save profile")
+        self.saveProfileButton.setToolTip("Save current parameters as new profile")
+        self.saveProfileButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+            
+        detBankGroup = GroupBox("DetectorBank parameters", layout="grid")
+        profileWidgets = [profileLabel, self.loadProfileBox, self.defaultCheckBox, self.saveProfileButton]
+        row = 0
+        for col, widget in enumerate(profileWidgets):
+            detBankGroup.addWidget(widget, row, col)
+        colSpan = len(profileWidgets) - 1
+        for row, param in enumerate(self.widgets.values()):
+            row += 1
+            detBankGroup.addWidget(param.label, row, 0, 1, 1)
+            detBankGroup.addWidget(param.widget, row, 1, 1, colSpan)
+            param.widget.valueChanged.connect(self._valueChanged)
+        row += 1
+            
+        detBankGroup.layout.setRowStretch(row+1, 10)
         
         self._ignoreValueChanged = False
         self._profile = None
         self.currentProfileAltered = False
-        self.loadProfileButton.clicked.connect(self._loadProfile)
+        self.loadProfileBox.currentTextChanged.connect(self.loadProfile)
         self.saveProfileButton.clicked.connect(self._saveProfile)
-        
-        self.restoreDefaultsButton.clicked.connect(self._setDefaults)
-        
-        profileGroup = GroupBox("Profile", layout="hbox")
-        widgets = [self.currentProfileLabel, self.saveProfileButton,  self.loadProfileButton]
-        for widget in widgets:
-            profileGroup.addWidget(widget)
             
-        layout = QVBoxLayout()
-        layout.addWidget(profileGroup)
-        layout.addLayout(form)
+        self.downsampleBox = QSpinBox()
+        self.downsampleBox.setMinimum(1)
+        self.downsampleBox.setMaximum(2**32//2-1) # essentially no max
+        self.downsampleBox.valueChanged.connect(self._writeDownsampleFactor)
+        self.downsampleBox.setToolTip("Factor by which to subsample the results when plotting")
         
-        layout.addWidget(self.restoreDefaultsButton)
+        extraArgsGroup = GroupBox("Additional parameters", layout="grid")
+        subsampleLabel = QLabel("Plot subsample factor")
+        subsampleLabel.setAlignment(Qt.AlignRight)
+        subsampleLabel.setToolTip(self.downsampleBox.toolTip())
+        extraArgsGroup.addWidget(subsampleLabel, 0, 0)
+        extraArgsGroup.addWidget(self.downsampleBox, 0, 1)
+        
+        
+        layout = QVBoxLayout()
+        # layout.addWidget(profileGroup)
+        layout.addWidget(detBankGroup)
+        layout.addWidget(extraArgsGroup)
+        
+        # layout.addWidget(self.restoreDefaultsButton)
             
         self.setLayout(layout)
         
@@ -233,6 +261,8 @@ class _DetBankArgsWidget(QWidget):
                     self._writeDefaultProfile()
     
     def loadProfile(self, profile):
+        if profile == "None":
+            return
         self.currentProfile = profile
         
         prof = ProfileManager().getProfile(profile)
@@ -311,3 +341,16 @@ class _DetBankArgsWidget(QWidget):
         # features
         for widget in [self.methodWidget, self.freqNormWidget, self.ampNormWidget]:
             widget.setCurrentIndex(0)
+            
+    def _writeDownsampleFactor(self):
+        settings = Settings()
+        settings.setValue("plot/downsample", self.downsampleBox.value())
+        
+    def setDownsampleFactor(self, downsample: int):
+        """ Update 'downsample factor' box value """
+        self.downsampleBox.setValue(downsample)
+        
+    def getDownsampleFactor(self) -> int:
+        """ Return current 'downsample factor' box value """
+        return self.downsampleBox.value()
+    

@@ -8,8 +8,8 @@ from qtpy.QtWidgets import (QDialog, QTableWidget, QTableWidgetItem, QRadioButto
                             QHBoxLayout, QVBoxLayout, QDialogButtonBox, QWidget,
                             QPushButton)
 from qtpy.QtCore import Signal, QObject, Qt, QTimer
-from qtpy.QtGui import QIcon
 from customQObjects.widgets import GroupBox, StackedWidget
+from customQObjects.gui import getIconFromTheme
 from .noterange import NoteRangePage
 from .equationdialog import EquationPage
 from .bandwidthpage import BandwidthPage
@@ -61,7 +61,7 @@ class FrequencyDialog(QDialog):
         self._editableFlags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
         
         self.addRowButton = QPushButton()
-        if (icon := QIcon.fromTheme('list-add')) is not None:
+        if (icon := getIconFromTheme('list-add')) is not None:
             self.addRowButton.setIcon(icon)
         else:
             self.addRowButton.setText("Add row")
@@ -69,7 +69,7 @@ class FrequencyDialog(QDialog):
         self.addRowButton.clicked.connect(self._addTableRow)
         
         self.clearTableButton = QPushButton()
-        if (icon := QIcon.fromTheme('edit-clear')) is not None:
+        if (icon := getIconFromTheme('edit-clear')) is not None:
             self.clearTableButton.setIcon(icon)
         else:
             self.clearTableButton.setText("Clear table")

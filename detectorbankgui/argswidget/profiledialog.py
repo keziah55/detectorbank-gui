@@ -14,7 +14,7 @@ class _ProfileDialog(QDialog):
     def __init__(self, *args, currentProfile=None, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.defaultCheckBox = QCheckBox("Set as default")
+        # self.defaultCheckBox = QCheckBox("Set as default")
         
         # buttons
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
@@ -85,7 +85,7 @@ class SaveDialog(_ProfileDialog):
         layout.addWidget(self.nameScroll)
         layout.addWidget(self.nameEdit)
         layout.addWidget(self.label)
-        layout.addWidget(self.defaultCheckBox)
+        # layout.addWidget(self.defaultCheckBox)
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
         

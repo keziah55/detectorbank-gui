@@ -6,8 +6,9 @@ Main window
 from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QMessageBox, 
                             QProgressBar, QTabBar, QToolBar)
 from qtpy.QtCore import Qt, QUrl
-from qtpy.QtGui import QIcon, QKeySequence, QDesktopServices
+from qtpy.QtGui import QKeySequence, QDesktopServices
 from customQObjects.core import Settings
+from customQObjects.gui import getIconFromTheme
 from .audioplot import AudioPlotWidget
 from .analyser import Analyser
 from .argswidget import ArgsWidget
@@ -239,21 +240,21 @@ class DetectorBankGui(QMainWindow):
             "&Open audio file", self, shortcut=QKeySequence.Open, 
             statusTip="Select audio file",
             triggered=self.audioplot.openAudioFile)
-        if (icon := QIcon.fromTheme("audio-x-generic")) is not None:
+        if (icon := getIconFromTheme("audio-x-generic")) is not None:
             self.openAudioFileAction.setIcon(icon)
             
         self.analyseAction = QAction(
             "&Analyse audio file", self, shortcut="F5",
             statusTip="Perform frequency analysis of audio",
             triggered = self._doAnalysis)
-        if (icon := QIcon.fromTheme("system-run")) is not None:
+        if (icon := getIconFromTheme("system-run")) is not None:
             self.analyseAction.setIcon(icon)
             
         self.exitAction = QAction(
             "&Quit", self, shortcut=QKeySequence.Quit,
             statusTip="Quit application",
             triggered=self.close)
-        if (icon := QIcon.fromTheme("application-exit")) is not None:
+        if (icon := getIconFromTheme("application-exit")) is not None:
             self.exitAction.setIcon(icon)
             
         self.openGuiDocsAction = QAction("&Open DetectorBank GUI documentation", self,

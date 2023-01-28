@@ -5,8 +5,8 @@ QScrollArea where :class:`SegmentWidgets` can be added or removed.
 """
 from qtpy.QtWidgets import QPushButton, QScrollArea, QSizePolicy, QHBoxLayout
 from qtpy.QtCore import Signal,  Qt, QSize
-from qtpy.QtGui import QIcon
 from customQObjects.widgets import GroupBox
+from customQObjects.gui import getIconFromTheme
 from .segmentwidget import SegmentWidget
 
 class SegmentList(QScrollArea):
@@ -64,13 +64,13 @@ class _SegmentList(GroupBox):
         self._min = defaultMin
         self._max = defaultMax
         
-        if (icon := QIcon.fromTheme('list-add')) is not None:
+        if (icon := getIconFromTheme('list-add')) is not None:
             self.addButton = QPushButton(icon, "")
         else:
             self.addButton = QPushButton("Add")
         self.addButton.setToolTip("Add new region")
         
-        if (icon := QIcon.fromTheme('list-remove')) is not None:
+        if (icon := getIconFromTheme('list-remove')) is not None:
             self.removeAllButton = QPushButton(icon, "")
         else:
             self.removeAllButton = QPushButton("Remove all")
@@ -170,7 +170,7 @@ class _SegmentList(GroupBox):
             widget.deleteLater()
                 
     def _makeRemoveButton(self):
-        if (icon := QIcon.fromTheme('list-remove')) is not None:
+        if (icon := getIconFromTheme('list-remove')) is not None:
             button = QPushButton(icon, "")
         else:
             button = QPushButton("Remove")

@@ -7,8 +7,9 @@ from pyqtgraph import PlotWidget, InfiniteLine, mkPen, LegendItem, PlotDataItem
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QToolBar, QSpinBox, 
                             QStackedWidget, QGridLayout, QGraphicsView, QGraphicsScene)
 from qtpy.QtCore import Signal, Slot, QPointF
-from qtpy.QtGui import QIcon, QPen
+from qtpy.QtGui import QPen
 from customQObjects.widgets import VSplitter
+from customQObjects.gui import getIconFromTheme
 import numpy as np
 import itertools
 
@@ -213,7 +214,7 @@ class HopfPlot(QWidget):
         self.toolbar.addWidget(self.rowsBox)
         self.toolbar.addWidget(self.colsBox)
         self.applyGridAction = self.toolbar.addAction("Apply")
-        if (icon := QIcon.fromTheme("ok")) is not None:
+        if (icon := getIconFromTheme("ok")) is not None:
             self.applyGridAction.setIcon(icon)
         self.applyGridAction.triggered.connect(self._resetGrid)
         
@@ -223,13 +224,13 @@ class HopfPlot(QWidget):
         self.pageLabel = QLabel()
         
         self.previousPageAction = self.toolbar.addAction("Previous page")
-        if (icon := QIcon.fromTheme("go-previous")) is not None:
+        if (icon := getIconFromTheme("go-previous")) is not None:
             self.previousPageAction.setIcon(icon)
         
         self.toolbar.addWidget(self.pageLabel)
         
         self.nextPageAction = self.toolbar.addAction("Next page")
-        if (icon := QIcon.fromTheme("go-next")) is not None:
+        if (icon := getIconFromTheme("go-next")) is not None:
             self.nextPageAction.setIcon(icon)
         
         self.previousPageAction.triggered.connect(self._previousPage)
@@ -239,12 +240,12 @@ class HopfPlot(QWidget):
         
         ## export and clear##
         # self.exportAction = self.toolbar.addAction("Export")
-        # if (icon := QIcon.fromTheme("document-save-as")) is not None:
+        # if (icon := getIconFromTheme("document-save-as")) is not None:
             # self.exportAction.setIcon(icon)
         # self.exportAction.triggered.connect(self._exportAll)
             
         self.clearAction = self.toolbar.addAction("Clear")
-        if (icon := QIcon.fromTheme("edit-clear")) is not None:
+        if (icon := getIconFromTheme("edit-clear")) is not None:
             self.clearAction.setIcon(icon)
         self.clearAction.triggered.connect(self.clear)
         

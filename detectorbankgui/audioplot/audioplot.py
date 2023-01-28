@@ -7,7 +7,8 @@ from pyqtgraph import PlotWidget, LinearRegionItem, InfiniteLine, mkColor
 from qtpy.QtCore import Signal, Slot, Qt, QBuffer, QByteArray, QIODevice
 from qtpy.QtWidgets import (QHBoxLayout, QVBoxLayout, QWidget, QMenu, QLabel, 
                             QPushButton, QFileDialog, QMessageBox)
-from qtpy.QtGui import QCursor, QIcon
+from qtpy.QtGui import QCursor
+from customQObjects.gui import getIconFromTheme
 from .segmentlist import SegmentList
 from ..audioread import read_audio
 import numpy as np
@@ -75,7 +76,7 @@ class AudioPlotWidget(QWidget):
         self.segmentList = SegmentList(self)
         
         self.openAudioButton = QPushButton(self)
-        if (icon := QIcon.fromTheme("audio-x-generic")) is not None:
+        if (icon := getIconFromTheme("audio-x-generic")) is not None:
             self.openAudioButton.setIcon(icon)
         else:
             self.openAudioButton.setText("Select audio file")
