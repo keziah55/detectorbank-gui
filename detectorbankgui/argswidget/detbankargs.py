@@ -86,11 +86,13 @@ class DetBankArgsWidget(QScrollArea):
         return getattr(self.widget, name)
     
 class _DetBankArgsWidget(QWidget):
-    """ Widget containing  """
+    """ Widget containing form for DetectorBank args, including loading and saving profiles """
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+         
+        # widgets are 'Value' widgets that have 'value' property, 'setValue' method
+        # and 'valueChanged' signal
         self.srWidget = ValueLabel(suffix=" Hz")
         self.threadsWidget = ValueSpinBox()
         self.freqBwWidget = FreqBwButton()
@@ -220,6 +222,7 @@ class _DetBankArgsWidget(QWidget):
         
     @property
     def currentProfile(self):
+        """ Return current profile name """
         return self._profile
     
     @currentProfile.setter
@@ -228,6 +231,7 @@ class _DetBankArgsWidget(QWidget):
         
     @property
     def currentProfileAltered(self):
+        """ Return True if current profile has been altered by user """
         return self._currentProfileAltered
     
     @currentProfileAltered.setter
@@ -237,6 +241,7 @@ class _DetBankArgsWidget(QWidget):
 
     @Slot()
     def _valueChanged(self):
+        """ Update `currentProfileAltered` unless ignore flag set """
         if not self._ignoreValueChanged:
             self.currentProfileAltered = True
         
