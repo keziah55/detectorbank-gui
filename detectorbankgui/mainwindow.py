@@ -98,9 +98,10 @@ class DetectorBankGui(QMainWindow):
         self._viewTabs.setCurrentIndex(idx)
         
         # restore previous profile
-        profile = settings.value("params/currentProfile", cast=str)
-        if profile != "None":
-            self.argswidget.loadProfile(profile)
+        profile = settings.value("params/currentProfile", cast=str, defaultValue="None")
+        if profile == "None":
+            profile = "default"
+        self.argswidget.loadProfile(profile)
             
         # get saved downsample factor
         downsample = settings.value("plot/downsample", cast=int, defaultValue=1000)
@@ -116,7 +117,7 @@ class DetectorBankGui(QMainWindow):
         settings.setValue(f"viewModes/{self._viewmode}", self.saveState())
         settings.endGroup()
         
-        profile = self.argswidget.currentProfile if not self.argswidget.currentProfileAltered else None
+        profile = self.argswidget.currentProfile #if not self.argswidget.currentProfileAltered else "None"
         settings.setValue("params/currentProfile", profile)
         
         return super().closeEvent(event)

@@ -6,7 +6,9 @@ Form to edit DetectorBank args
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, QDialog, 
                             QSizePolicy, QScrollArea, QMessageBox, QSpinBox, QCheckBox)
 from qtpy.QtCore import Qt, Slot, Signal
+from qtpy.QtGui import QFont
 from customQObjects.widgets import ElideMixin, GroupBox, ComboBox
+from customQObjects.widgets.combobox import ComboBoxModel as _ComboBoxModel
 from customQObjects.core import Settings
 from customQObjects.gui import getIconFromTheme
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
@@ -19,6 +21,27 @@ from detectorbank import DetectorBank
 import os
 from dataclasses import dataclass
 from collections import namedtuple
+
+
+class ComboBoxModel(_ComboBoxModel):
+    
+    def data(self, idx, role):
+        """ Return the data at index `idx`. 
+        
+            If `role` is `Qt.DisplayRole`, return the NamedTuple's `name`.
+            If `role` is `Qt.UserRole`, return the NamedTuple's `value`.
+        """
+        if not idx.isValid():
+            return None
+        
+        value = self.values[idx.row()]
+        
+        if role == Qt.DisplayRole:
+            s = value.name
+            if value.edited:
+                s += " *"
+            return s
+
 
 @dataclass
 class Parameter:
@@ -43,6 +66,8 @@ class Parameter:
             return value
         
 Feature = namedtuple("Feature", ["name", "value"]) # used when making combobox of DB features
+
+ProfileComboBoxItem = namedtuple("Profile", ["name", "edited"])
 
 class FreqBwButton(ElideMixin, QPushButton):
     
@@ -103,6 +128,11 @@ class _DetBankArgsWidget(QWidget):
         self.dampingWidget.setSingleStep(0.0001)
         self.dampingWidget.setDecimals(5)
         
+        numCores = os.cpu_count()
+        self.threadsWidget.setMinimum(1)
+        self.threadsWidget.setMaximum(numCores)
+        self.threadsWidget.setValue(numCores)
+        
         # make dict of widgets
         # Parameter objects automatically make labels and set tool tips
         self.widgets = {
@@ -136,7 +166,16 @@ class _DetBankArgsWidget(QWidget):
         
         # profile widgets
         self.loadProfileBox = ComboBox()
-        self.loadProfileBox.addItems(["None"] + ProfileManager().profiles)
+        self.loadProfileBox.addItems(ProfileManager().profiles)
+        
+        self.reloadProfileButton = QPushButton()
+        if (icon:=getIconFromTheme("view-refresh")) is not None:
+            self.reloadProfileButton.setIcon(icon)
+        else:
+            self.reloadProfileButton.setText("Reload")
+        self.reloadProfileButton.setEnabled(False)
+        self.reloadProfileButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+            
         profileLabel = QLabel("Profile")
         profileLabel.setAlignment(Qt.AlignRight)
         self.defaultCheckBox = QCheckBox("Set as default")
@@ -153,7 +192,8 @@ class _DetBankArgsWidget(QWidget):
             
         # group box of DetectorBank args
         detBankGroup = GroupBox("DetectorBank parameters", layout="grid")
-        profileWidgets = [profileLabel, self.loadProfileBox, self.defaultCheckBox, self.saveProfileButton]
+        profileWidgets = [profileLabel, self.loadProfileBox, self.reloadProfileButton, 
+                          self.defaultCheckBox, self.saveProfileButton]
         row = 0
         for col, widget in enumerate(profileWidgets):
             detBankGroup.addWidget(widget, row, col)
@@ -170,7 +210,8 @@ class _DetBankArgsWidget(QWidget):
         self._ignoreValueChanged = False
         self._profile = None
         self.currentProfileAltered = False
-        self.loadProfileBox.currentTextChanged.connect(self.loadProfile)
+        self.loadProfileBox.currentTextChanged.connect(self._doLoadProfile)
+        self.reloadProfileButton.clicked.connect(self.reloadProfile)
         self.saveProfileButton.clicked.connect(self._saveProfile)
             
         # additional args
@@ -202,10 +243,18 @@ class _DetBankArgsWidget(QWidget):
     @currentProfile.setter
     def currentProfile(self, name):
         self._profile = name
-        if name is not None:
-            self.currentProfileAltered = False
-        else:
-            self.currentProfileAltered = True
+        # if name is not None:
+        #     print("currentProfile setting currentProfileAltered to false")
+        #     self.currentProfileAltered = False
+        # else:
+        #     print("currentProfile setting currentProfileAltered to true")
+        #     self.currentProfileAltered = True
+        # if name is None:
+        #     name = "None"
+        # print(f"currentText={self.loadProfileBox.currentText()}; {name=}")
+        # if self.loadProfileBox.currentText() != name:
+        #     print(f"set text to {name}")
+        #     self.loadProfileBox.setCurrentText(name)
         
     @property
     def currentProfileAltered(self):
@@ -214,15 +263,15 @@ class _DetBankArgsWidget(QWidget):
     @currentProfileAltered.setter
     def currentProfileAltered(self, value):
         self._currentProfileAltered = value
-        if value:
-            self.loadProfileBox.setCurrentText("None")
-        
+        self.reloadProfileButton.setEnabled(value)
+
     @Slot()
     def _valueChanged(self):
         if not self._ignoreValueChanged:
             self.currentProfileAltered = True
         
     def _ensureDefaultExists(self):
+        """ Create a 'default' profile, if necessary """
         if "default" not in ProfileManager().profiles:
             params = self._getDefaultArgs()
             self.saveProfile("default", params)
@@ -237,26 +286,39 @@ class _DetBankArgsWidget(QWidget):
                 self.saveProfile(name)
         return name
     
-    def loadProfile(self, profile):
-        if profile == "None":
-            return
-        
-        self.currentProfile = profile
-        
+    def _doLoadProfile(self, profile):
+        """ Perform loading of `profile` """
         prof = ProfileManager().getProfile(profile)
         if prof is not None:
             keys = ["sr", "damping", "gain", "numThreads", "detChars"]
             params = {key:prof.value(key) for key in keys}
             method, freqNorm, ampNorm = prof.value("features")
-            params["method"] = method,
-            params["freqNorm"] = freqNorm,
-            params["ampNorm"] = ampNorm,
+            params["method"] = method
+            params["freqNorm"] = freqNorm
+            params["ampNorm"] = ampNorm
             
             self._ignoreValueChanged = True
             self.setParams(**params)
             self._ignoreValueChanged = False
+            
+            self.currentProfileAltered = False
     
+    def loadProfile(self, profile):
+        """ Load `profile` """
+        self.currentProfile = profile
+        if profile == "None":
+            return
+        self._doLoadProfile(profile)
+        
+    def reloadProfile(self):
+        """ Reload current profile """
+        self._doLoadProfile(self.currentProfile)
+            
     def saveProfile(self, name, params=None):
+        """ Save profile `param` with `name` 
+        
+            If `params` is None, the current args are used.
+        """
         if params is None:
             try:
                 params = self.getArgs()
@@ -273,9 +335,10 @@ class _DetBankArgsWidget(QWidget):
         
         # add to profile list
         self.loadProfileBox.addItem(name)
-        
+        self.currentProfile = name
         
     def _defaultBoxClicked(self, state):
+        """ If 'default' box checked, ensure the current profile is saved """
         if state == Qt.Checked:
             profileWritten = self._writeDefaultProfile()
             if not profileWritten:
@@ -297,9 +360,12 @@ class _DetBankArgsWidget(QWidget):
         
     def setParams(self, **kwargs):
         """ Set arg value in form """
+        if list(kwargs.keys()) == ['sr']:
+            self._ignoreValueChanged = True
         for name, value in kwargs.items():
             if (param := self.widgets.get(name, None)) is not None:
                 param.widget.setValue(value)
+        self._ignoreValueChanged = False
     
     def getArgs(self) -> dict:
         """ Return dict of DetectorBank args.
@@ -326,7 +392,6 @@ class _DetBankArgsWidget(QWidget):
     @staticmethod
     def _getDefaultArgs():
         """ Return dict of default values for all args """
-        
         f = np.array([440*2**(k/12) for k in range(-48,40)])
         bw = np.zeros(len(f))
         detChars = np.column_stack((f,bw))

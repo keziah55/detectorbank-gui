@@ -61,7 +61,7 @@ class TestArgsWidget:
         widget = ArgsWidget()
         self.widget = widget
         
-    def test_form(self, setup, qtbot):
+    def test_form(self, setup_load_profile, qtbot):
         
         test_values = {
             "sr":{"value":48000, "expected":"48000", "default":None},
@@ -78,6 +78,8 @@ class TestArgsWidget:
                        "expected":DetectorBank.amp_normalized,
                        "default":DetectorBank.amp_unnormalized},
             }
+        
+        self.widget.loadProfileBox.setCurrentText("None")
         
         for key, test_vals in test_values.items():
             param = self.widget.widgets[key]
@@ -96,8 +98,9 @@ class TestArgsWidget:
                 
         assert "default" in self.widget.loadProfileBox.items
         
+        qtbot.wait(3000)
         self.widget.loadProfileBox.setCurrentText("default")
-        qtbot.wait(50)
+        qtbot.wait(3000)
         
         for key, test_vals in test_values.items():
             param = self.widget.widgets[key]
