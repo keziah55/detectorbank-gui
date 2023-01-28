@@ -4,15 +4,14 @@
 Form to edit DetectorBank args
 """
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, QDialog, 
-                            QSizePolicy,QGridLayout, QScrollArea, QMessageBox,
-                            QSpinBox, QHBoxLayout, QCheckBox)
+                            QSizePolicy, QScrollArea, QMessageBox, QSpinBox, QCheckBox)
 from qtpy.QtCore import Qt, Slot, Signal
 from customQObjects.widgets import ElideMixin, GroupBox, ComboBox
 from customQObjects.core import Settings
 from customQObjects.gui import getIconFromTheme
 from .valuewidgets import ValueLabel, ValueComboBox, ValueSpinBox, ValueDoubleSpinBox
 from .frequencydialog import FrequencyDialog
-from .profiledialog import LoadDialog, SaveDialog
+from .profiledialog import SaveDialog
 from ..profilemanager import ProfileManager
 from ..invalidargexception import InvalidArgException
 import numpy as np
@@ -69,24 +68,6 @@ class FreqBwButton(ElideMixin, QPushButton):
             if self._dialog.valuesStr is not None:
                 self.setText(self._dialog.valuesStr)
                 self.valueChanged.emit()
-                
-class ProfileLabel(QLabel):
-    def __init__(self, *args, name=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setName(name)
-        
-    def setName(self, name):
-        if name is None:
-            name = ""
-        self._name = name
-        self.setText(f"Name: {name}")
-        self.setToolTip(f"Current profile: {name}")
-        
-    def profileAltered(self):
-        if self._name:
-            text = f"Name: <i>{self._name}</i>"
-            self.setText(text)
-            self.setToolTip("Profile altered by user")
 
 class DetBankArgsWidget(QScrollArea):
     def __init__(self, *args, **kwargs):
@@ -95,7 +76,6 @@ class DetBankArgsWidget(QScrollArea):
         self.setWidget(self.widget)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         
     def __getattr__(self, name):
         return getattr(self.widget, name)
@@ -156,14 +136,14 @@ class _DetBankArgsWidget(QWidget):
             }
         
         
-        self.currentProfileLabel = ProfileLabel()
-        
+        # profile widgets
         self.loadProfileBox = ComboBox()
         self.loadProfileBox.addItems(["None"] + ProfileManager().profiles)
         profileLabel = QLabel("Profile")
         profileLabel.setAlignment(Qt.AlignRight)
         self.defaultCheckBox = QCheckBox("Set as default")
         self.defaultCheckBox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        self.defaultCheckBox.stateChanged.connect(self._defaultBoxClicked)
         
         self.saveProfileButton = QPushButton()
         if (icon:=getIconFromTheme("document-save")) is not None:
@@ -173,6 +153,7 @@ class _DetBankArgsWidget(QWidget):
         self.saveProfileButton.setToolTip("Save current parameters as new profile")
         self.saveProfileButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
             
+        # group box of DetectorBank args
         detBankGroup = GroupBox("DetectorBank parameters", layout="grid")
         profileWidgets = [profileLabel, self.loadProfileBox, self.defaultCheckBox, self.saveProfileButton]
         row = 0
@@ -194,6 +175,7 @@ class _DetBankArgsWidget(QWidget):
         self.loadProfileBox.currentTextChanged.connect(self.loadProfile)
         self.saveProfileButton.clicked.connect(self._saveProfile)
             
+        # additional args
         self.downsampleBox = QSpinBox()
         self.downsampleBox.setMinimum(1)
         self.downsampleBox.setMaximum(2**32//2-1) # essentially no max
@@ -207,14 +189,10 @@ class _DetBankArgsWidget(QWidget):
         extraArgsGroup.addWidget(subsampleLabel, 0, 0)
         extraArgsGroup.addWidget(self.downsampleBox, 0, 1)
         
-        
         layout = QVBoxLayout()
-        # layout.addWidget(profileGroup)
         layout.addWidget(detBankGroup)
         layout.addWidget(extraArgsGroup)
         
-        # layout.addWidget(self.restoreDefaultsButton)
-            
         self.setLayout(layout)
         
         self._setDefaults()
@@ -228,37 +206,42 @@ class _DetBankArgsWidget(QWidget):
         self._profile = name
         if name is not None:
             self.currentProfileAltered = False
-            self.currentProfileLabel.setName(name)
         else:
             self.currentProfileAltered = True
-            self.currentProfileLabel.profileAltered()
+        
+    @property
+    def currentProfileAltered(self):
+        return self._currentProfileAltered
+    
+    @currentProfileAltered.setter
+    def currentProfileAltered(self, value):
+        self._currentProfileAltered = value
+        if value:
+            self.loadProfileBox.setCurrentText("None")
         
     @Slot()
     def _valueChanged(self):
         if not self._ignoreValueChanged:
             self.currentProfileAltered = True
-            self.currentProfileLabel.profileAltered()
         
-    def _loadProfile(self):
-        """ Show load dialog and load profile """
-        dialog = LoadDialog(parent=self, currentProfile=self._profile)
-        reply = dialog.exec_()
-        if reply == QDialog.Accepted:
-            name, default = dialog.getProfileName()
-            self.loadProfile(name)
-            if default:
-                self._writeDefaultProfile()
+    # def _loadProfile(self):
+    #     """ Show load dialog and load profile """
+    #     dialog = LoadDialog(parent=self, currentProfile=self._profile)
+    #     reply = dialog.exec_()
+    #     if reply == QDialog.Accepted:
+    #         name = dialog.getProfileName()
+    #         self.loadProfile(name)
+    #     return name
     
     def _saveProfile(self):
         """ Show save dialog and save profile """
         dialog = SaveDialog(parent=self)
         reply = dialog.exec_()
         if reply == QDialog.Accepted:
-            name, default = dialog.getProfileName()
+            name = dialog.getProfileName()
             if name: # if name is not empty string
                 self.saveProfile(name)
-                if default:
-                    self._writeDefaultProfile()
+        return name
     
     def loadProfile(self, profile):
         if profile == "None":
@@ -292,10 +275,25 @@ class _DetBankArgsWidget(QWidget):
         det = DetectorBank(*args)
         det.saveProfile(name)
         
+    def _defaultBoxClicked(self, state):
+        if state == Qt.Checked:
+            profileWritten = self._writeDefaultProfile()
+            if not profileWritten:
+                self.defaultCheckBox.setChecked(False)
+        
     def _writeDefaultProfile(self):
-        """ Write default profile name to config file """
-        settings = Settings()
-        settings.setValue("params/defaultProfile", self.profileBox.currentText())
+        """ Write default profile name to config file. 
+        
+            If no profile is currently active, show the Save Profile dialog.
+        """
+        name = self.loadProfileBox.currentText()
+        if name == "None":
+            name = self._saveProfile()
+        if name:
+            settings = Settings()
+            settings.setValue("params/defaultProfile", name)
+            return True
+        return False
         
     def setParams(self, **kwargs):
         """ Set arg value in form """
