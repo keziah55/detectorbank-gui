@@ -1,5 +1,5 @@
 from detectorbankgui.argswidget import ArgsWidget
-from detectorbankgui.argswidget.profiledialog import SaveDialog, LoadDialog
+from detectorbankgui.argswidget.profiledialog import SaveDialog
 from detectorbankgui.profilemanager import ProfileManager
 from detectorbankgui.invalidargexception import InvalidArgException
 from detectorbank import DetectorBank
