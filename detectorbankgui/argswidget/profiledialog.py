@@ -10,7 +10,7 @@ from ..profilemanager import ProfileManager
 
 class SaveDialog(QDialog):
     def __init__(self, *args, currentProfile=None, **kwargs):
-        super().__init__(*args, currentProfile=currentProfile, **kwargs)
+        super().__init__(*args, **kwargs)
         
         self.nameList = QListWidget()
         self.nameScroll = QScrollArea()

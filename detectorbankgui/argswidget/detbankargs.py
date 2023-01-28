@@ -315,7 +315,7 @@ class _DetBankArgsWidget(QWidget):
                 value = None
             ret[name] = value
             if value is None:
-                invalid.append(param.prettyName)
+                invalid.append(param.name)
         if len(invalid) > 0:
             msg = (f"The following arg(s) are invalid: {', '.join(invalid)}.\n"
                     "Please set valid values and try again.")
