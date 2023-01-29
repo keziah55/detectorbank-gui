@@ -12,6 +12,8 @@ from detectorbank import DetectorBank, DetectorCache, Producer
 import numpy as np
 from functools import partial
 
+pytest_plugin = "pytest-qt"
+
 class AnalysisWorker(QObject):
     """ Object to perform analysis for a given audio segment
     
@@ -119,7 +121,7 @@ class Analyser(QObject):
     
     def __init__(self, resultWidget):
         super().__init__()
-        self.hopfplot = resultWidget
+        self.resultWidget = resultWidget
         
     def start(self):
         """ Begin analysis of all segments. """
@@ -149,7 +151,7 @@ class Analyser(QObject):
         """
         self.analysers = [] 
         self._finished = [] # list of completed analysers (can't remove from lst/dict, as they are blocking)
-        idxx = self.hopfplot.addPlots(detBankParams['detChars'][:,0], segments)
+        idxx = self.resultWidget.addPlots(detBankParams['detChars'][:,0], segments)
         numSamples = 0
         for idx, segment in zip(idxx, segments):
             n0, n1 = segment.samples
@@ -170,7 +172,7 @@ class Analyser(QObject):
         
     def _analyserFinished(self, result, key):
         """ Plot `result` and check if all analysers are finished. """
-        self.hopfplot.addData(key, result)
+        self.resultWidget.addData(key, result)
         self._finished.append(key)
         
         if len(self._finished) == len(self.analysers):

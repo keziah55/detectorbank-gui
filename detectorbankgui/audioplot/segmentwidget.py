@@ -170,5 +170,3 @@ class SegmentWidget(QWidget):
             self.requestPlaySegment.emit(self)
         else:
             self.requestStopSegment.emit()
-    
-        

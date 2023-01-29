@@ -14,10 +14,9 @@ class PlotWidget(QWidget):
     
     highlightChannel = Signal(object)
     
-    def __init__(self, parent, *args, freqs=None, segment=None, **kwargs):
+    def __init__(self, parent, *args, freqs=None, **kwargs):
         super().__init__(parent)
         self.freqs = freqs
-        self.segment = segment
         self.parent = parent
         self.title = kwargs.get('title', None)
         

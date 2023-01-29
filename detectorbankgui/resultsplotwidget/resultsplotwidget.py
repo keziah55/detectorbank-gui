@@ -35,6 +35,7 @@ class ResultsPlotWidget(QWidget):
         self.rowsBox.setMinimum(1)
         self.colsBox.setMinimum(1)
         
+        ## toolbar ##
         self.toolbar.addAction(parent.analyseAction)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.rowsBox)
@@ -64,19 +65,13 @@ class ResultsPlotWidget(QWidget):
         
         self.toolbar.addSeparator()
         
-        ## export and clear##
-        # self.exportAction = self.toolbar.addAction("Export")
-        # if (icon := getIconFromTheme("document-save-as")) is not None:
-            # self.exportAction.setIcon(icon)
-        # self.exportAction.triggered.connect(self._exportAll)
-            
+        ## clear##
         self.clearAction = self.toolbar.addAction("Clear")
         if (icon := getIconFromTheme("edit-clear")) is not None:
             self.clearAction.setIcon(icon)
         self.clearAction.triggered.connect(self.clear)
         
         ## plots ##
-        
         # from matplotlib.colours.CSS4_COLORS 
         # ['yellow', 'red', 'firebrick', 'darkorange', 'deeppink', 'darkmagenta', 
         # 'mediumvioletred', 'green', 'lime',  'darkslategrey', 'lightslategrey', 'skyblue', 'blue']
@@ -86,6 +81,8 @@ class ResultsPlotWidget(QWidget):
         self._plots = []
         
         self.page = 0
+        
+        self.sr = sr
         
         self._splitter = VSplitter()
         self._splitter.addWidget(self.stack)
@@ -103,10 +100,14 @@ class ResultsPlotWidget(QWidget):
         
     @property
     def page(self):
+        """ Return current page index """
         return self.stack.currentIndex()
     
     @page.setter
     def page(self, idx):
+        """ Set current page index and associated values """
+        # store our own pageCount because QStackedWidget.count is unreliable
+        # when pages have been deleted
         if self._pageCount == 0:
             self.pageLabel.setText("Page 0/0")
             return
@@ -123,17 +124,21 @@ class ResultsPlotWidget(QWidget):
         return page
     
     def _previousPage(self):
+        """ Go to previous page """
         self.page -= 1
         
     def _nextPage(self):
+        """ Go to next page """
         self.page += 1
         
     @property
     def rows(self):
+        """ Return user's chosen number of rows for plot grid """
         return self.rowsBox.value()
     
     @property
     def cols(self):
+        """ Return user's chosen number of columns for plot grid """
         return self.colsBox.value()
     
     @property
@@ -144,6 +149,7 @@ class ResultsPlotWidget(QWidget):
         
     @property
     def sr(self):
+        """ Return sample rate of audio """
         return self._sr
     
     @sr.setter
@@ -151,6 +157,7 @@ class ResultsPlotWidget(QWidget):
         self._sr = value
         
     def setSampleRate(self, value):
+        """ Set sample rate """
         self.sr = value
         
     def _resetGrid(self):
@@ -163,7 +170,7 @@ class ResultsPlotWidget(QWidget):
         row, col = 0, 0
             
         # add plots
-        for p in self._plots:
+        for p, _ in self._plots:
             if row >= self.rows:
                 page = self._newPage()
                 row, col = 0, 0
@@ -190,6 +197,7 @@ class ResultsPlotWidget(QWidget):
         self.page = 0
         
     def _ensurePlotVisible(self, plot):
+        """ Show page containing `plot` """
         for idx in range(self._pageCount):
             page = self.stack.widget(idx)
             if plot in page:
@@ -197,10 +205,6 @@ class ResultsPlotWidget(QWidget):
                 return idx
         return None
         
-    def _exportAll(self):
-        """ Export all plots """
-        pass
-    
     def addPlots(self, freqs, segments) -> list[int]:
         """ Create empty plots for the given segments, which will contain data for the given frequencies 
         
@@ -234,11 +238,11 @@ class ResultsPlotWidget(QWidget):
             if segment.colour is not None:
                 title = f'<span style="color:{segment.colour}">{title}</span>'
                 
-            p = PlotWidget(self, title=title, freqs=freqs, segment=segment)
+            p = PlotWidget(self, title=title, freqs=freqs)
             p.highlightChannel.connect(self.legendWidget.highlightLabel)
             page.addPlot(p, row, col)
             idx.append(len(self._plots))
-            self._plots.append(p)
+            self._plots.append((p, segment))
                 
             if self.sr is not None:
                 p.setLabel('bottom', "Time", units="s")
@@ -254,17 +258,16 @@ class ResultsPlotWidget(QWidget):
     
     def addData(self, idx, data):
         """ Plot `data` on plot for `segment` """
-        p = self._plots[idx]
+        p, segment = self._plots[idx]
         
         chans, size = data.shape
         
-        s0, s1 = p.segment.samples
+        s0, s1 = segment.samples
         
         if self.sr is not None:
             t = np.linspace(s0/self.sr, s1/self.sr, size)
         else:
-            # TODO downsampling
-            t = np.arange(s0, s1)
+            t = np.linspace(s0, s1, size)
         
         colours = itertools.cycle(self.colours)
         
