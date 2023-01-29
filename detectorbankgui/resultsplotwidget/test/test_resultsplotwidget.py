@@ -59,6 +59,11 @@ def test_resultsplot(audio2, qtbot):
     assert len(resultWidget._plots) == len(segments)
     assert resultWidget._pageCount == int(np.ceil(len(segments) / (resultWidget.rows * resultWidget.cols)))
     assert len(resultWidget.legendWidget._labelItems) == len(f)
+
+    expected = [None, (1,2)]
+    for idx in range(resultWidget.stack.count()):
+        plotPage = resultWidget.stack.widget(idx)
+        assert plotPage.getNextRowCol() == expected[idx]
     
     for idx, plot_seg in enumerate(resultWidget._plots):
         segment = segments[idx]
