@@ -199,18 +199,18 @@ class _DetBankArgsWidget(QWidget):
         self.saveProfileButton.clicked.connect(self._saveProfile)
             
         # additional args
-        self.downsampleBox = QSpinBox()
-        self.downsampleBox.setMinimum(1)
-        self.downsampleBox.setMaximum(2**32//2-1) # essentially no max
-        self.downsampleBox.valueChanged.connect(self._writeDownsampleFactor)
-        self.downsampleBox.setToolTip("Factor by which to subsample the results when plotting")
+        self.subsampleBox = QSpinBox()
+        self.subsampleBox.setMinimum(1)
+        self.subsampleBox.setMaximum(2**32//2-1) # essentially no max
+        self.subsampleBox.valueChanged.connect(self._writeSubsampleFactor)
+        self.subsampleBox.setToolTip("Factor by which to subsample the results when plotting")
         
         extraArgsGroup = GroupBox("Additional parameters", layout="grid")
         subsampleLabel = QLabel("Plot subsample factor")
         subsampleLabel.setAlignment(Qt.AlignRight)
-        subsampleLabel.setToolTip(self.downsampleBox.toolTip())
+        subsampleLabel.setToolTip(self.subsampleBox.toolTip())
         extraArgsGroup.addWidget(subsampleLabel, 0, 0)
-        extraArgsGroup.addWidget(self.downsampleBox, 0, 1)
+        extraArgsGroup.addWidget(self.subsampleBox, 0, 1)
         
         layout = QVBoxLayout()
         layout.addWidget(detBankGroup)
@@ -386,16 +386,16 @@ class _DetBankArgsWidget(QWidget):
             }
         return params
         
-    def _writeDownsampleFactor(self):
+    def _writeSubsampleFactor(self):
         """ Write subsample value to config file """
         settings = Settings()
-        settings.setValue("plot/downsample", self.downsampleBox.value())
+        settings.setValue("plot/subsample", self.subsampleBox.value())
         
-    def setDownsampleFactor(self, downsample: int):
-        """ Update 'downsample factor' box value """
-        self.downsampleBox.setValue(downsample)
+    def setSubsampleFactor(self, subsample: int):
+        """ Update 'subsample factor' box value """
+        self.subsampleBox.setValue(subsample)
         
-    def getDownsampleFactor(self) -> int:
-        """ Return current 'downsample factor' box value """
-        return self.downsampleBox.value()
+    def getSubsampleFactor(self) -> int:
+        """ Return current 'subsample factor' box value """
+        return self.subsampleBox.value()
     

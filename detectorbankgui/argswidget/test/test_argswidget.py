@@ -202,6 +202,14 @@ class TestArgsWidget:
                 assert np.all(np.isclose(value, expected))
             else:
                 assert value == expected
+                
+    def test_subsample(self, setup, qtbot):
+        subsample = 10
+        
+        with qtbot.waitSignal(self.widget.subsampleBox.valueChanged):
+            self.widget.setSubsampleFactor(subsample)
+            
+        assert self.widget.getSubsampleFactor() == subsample
         
     @pytest.mark.skip("test not written yet")
     def test_freq_bw_dialog(self, setup, qtbot):
