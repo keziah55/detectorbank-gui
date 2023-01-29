@@ -31,10 +31,7 @@ class PlotPage(QWidget):
             widget.deleteLater()
         
     def getNextRowCol(self):
-        """ Return row and column of next empty space. 
-        
-            Returns None if page is full
-        """
+        """ Return row and column of next empty space. """
         if self.layout.count() == 0:
             return 0, 0
         else:
@@ -44,6 +41,4 @@ class PlotPage(QWidget):
             if rem == col:
                 row += 1
                 col = 0
-            if row == self.layout.rowCount() and col == self.layout.columnCount():
-                return None
             return row, col

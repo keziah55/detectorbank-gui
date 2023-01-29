@@ -60,7 +60,7 @@ def test_resultsplot(audio2, qtbot):
     assert resultWidget._pageCount == int(np.ceil(len(segments) / (resultWidget.rows * resultWidget.cols)))
     assert len(resultWidget.legendWidget._labelItems) == len(f)
 
-    expected = [None, (1,2)]
+    expected = [(2,2), (1,2)]
     for idx in range(resultWidget.stack.count()):
         plotPage = resultWidget.stack.widget(idx)
         assert plotPage.getNextRowCol() == expected[idx]

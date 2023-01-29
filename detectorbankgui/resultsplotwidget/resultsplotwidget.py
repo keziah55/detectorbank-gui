@@ -216,12 +216,7 @@ class ResultsPlotWidget(QWidget):
             row, col = 0, 0
         else:
             page = self.stack.widget(self._pageCount-1)
-            nextRowCol = page.getNextRowCol()
-            if nextRowCol is None:
-                page = self._newPage()
-                row, col = 0, 0
-            else:
-                row, col = nextRowCol
+            row, col = page.getNextRowCol()
         
         if len(self._plots) == 0:
             self.legendWidget.makeLegend(freqs, self.colours)
