@@ -4,12 +4,13 @@
 Main window
 """
 from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QMessageBox, 
-                            QProgressBar)
+                            QProgressBar, QDialog, QLabel)
 from qtpy.QtCore import Qt, QUrl
 from qtpy.QtGui import QKeySequence, QDesktopServices, QIcon
 import qtpy
 from customQObjects.core import Settings
 from customQObjects.gui import getIconFromTheme
+from .aboutdialog import AboutDialog
 from .audioplot import AudioPlotWidget
 from .analyser import Analyser
 from .argswidget import ArgsWidget
@@ -65,6 +66,15 @@ class DetectorBankGui(QMainWindow):
             self.audioplot.openAudioFile(audioFile)
             
         fileDir = os.path.split(__file__)[0]
+        
+        qt_api_version = qtpy.PYQT_VERSION if qtpy.API_NAME.startswith("PyQt") else qtpy.PYSIDE_VERSION
+        msg = ["DetectorBank GUI",
+               f"Python {sys.version_info.major}.{sys.version_info.minor}",
+               f"Qt {qtpy.QT_VERSION}, {qtpy.API_NAME} {qt_api_version}",
+               "(C) Keziah Milligan"]
+        image = os.path.join(fileDir, "..", "images/splash.png")
+        self.about = AboutDialog("\n".join(msg), image)
+        
         path = os.path.join(fileDir, "..", "images/icon.png")
         icon = QIcon(path)
         self.setWindowIcon(icon)
@@ -186,13 +196,7 @@ class DetectorBankGui(QMainWindow):
         QDesktopServices.openUrl(QUrl("https://keziah55.github.io/DetectorBank/"))
         
     def _about(self):
-        qt_api_version = qtpy.PYQT_VERSION if qtpy.API_NAME.startswith("PyQt") else qtpy.PYSIDE_VERSION
-        msg = ["DetectorBank GUI",
-               f"Python {sys.version_info.major}.{sys.version_info.minor}",
-               f"Qt {qtpy.QT_VERSION}, {qtpy.API_NAME} {qt_api_version}",
-               "(C) Keziah Milligan"]
-        
-        QMessageBox.about(self, "DetectorBank GUI", "\n".join(msg))
+        self.about.exec_()
         
     def _createActions(self):
         self.openAudioFileAction = QAction(
