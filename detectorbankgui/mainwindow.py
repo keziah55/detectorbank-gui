@@ -4,9 +4,10 @@
 Main window
 """
 from qtpy.QtWidgets import (QMainWindow, QDockWidget, QAction, QMessageBox, 
-                            QProgressBar, QTabBar, QToolBar)
+                            QProgressBar)
 from qtpy.QtCore import Qt, QUrl
-from qtpy.QtGui import QKeySequence, QDesktopServices
+from qtpy.QtGui import QKeySequence, QDesktopServices, QIcon
+import qtpy
 from customQObjects.core import Settings
 from customQObjects.gui import getIconFromTheme
 from .audioplot import AudioPlotWidget
@@ -14,10 +15,9 @@ from .analyser import Analyser
 from .argswidget import ArgsWidget
 from .resultsplotwidget import ResultsPlotWidget
 from .invalidargexception import InvalidArgException
-from collections import deque, namedtuple
-
-SegmentAnalysis = namedtuple("SegmentAnalysis", ["segement", "analyser"])
-WidgetView = namedtuple("WidgetView", ["dockwidget", "viewmode"])
+from collections import deque
+import sys
+import os
 
 class DetectorBankGui(QMainWindow):
     
@@ -53,59 +53,40 @@ class DetectorBankGui(QMainWindow):
         self.analyser.progress.connect(self._incrementProgress)
         self.analyser.finished.connect(self._maxProgress)
         
-        widgets = {"audioinput":('Audio Input', self.audioplot, 'left', 'input'),
-                   "args":('Parameters',self.argswidget, 'left', 'input'),
-                   "output":("Output", self.resultsplot, 'right', 'output')}
+        widgets = {"audioinput":('Audio Input', self.audioplot, 'left'),
+                   "args":('Parameters',self.argswidget, 'left'),
+                   "output":("Output", self.resultsplot, 'right')}
         
         for key, values in widgets.items():
-            name, widget, area, viewmode = values
-            self.createDockWidget(widget, area, name, viewmode, key)
+            name, widget, area = values
+            self.createDockWidget(widget, area, name, key)
         
         if audioFile is not None:
             self.audioplot.openAudioFile(audioFile)
             
-        self._viewmode = None
-        self.show()
-        
-        # fileDir = os.path.split(__file__)[0]
-        # path = os.path.join(fileDir, "..", "images/icon_alpha.png")
-        # icon = QIcon(path)
-        # self.setWindowIcon(icon)
+        fileDir = os.path.split(__file__)[0]
+        path = os.path.join(fileDir, "..", "images/icon.png")
+        icon = QIcon(path)
+        self.setWindowIcon(icon)
         
     def show(self):
         settings = Settings()
-        settings.beginGroup("window")
-        geometry = settings.value("geometry")
-        viewmode = settings.value("viewMode")
-        settings.endGroup()
+        geometry = settings.value("window/geometry")
         
         if geometry is not None:
             self.restoreGeometry(geometry)
         else:
             self.showMaximized()
-        if viewmode is None:
-            viewmode = "all"
-        self._switchView(viewmode, savePrevious=False)
-        self._viewmode = viewmode
-        # Set current view tab
-        # This will triggered currentChanged, which will call _switchView
-        # but we need to manually call _switchView first so we can pass savePrevious=False
-        # When _switchView is called again, it will return immediately, as the
-        # 'new' mode is the same as _viewmode
-        # Have to do all this to find the index of the required tab...
-        idx, *_ = [idx for idx in range(self._viewTabs.count()) 
-                   if self._viewTabs.tabText(idx).lower()==self._viewmode]
-        self._viewTabs.setCurrentIndex(idx)
-        
+                
         # restore previous profile
         profile = settings.value("params/currentProfile", cast=str, defaultValue="None")
         if profile == "None":
             profile = "default"
         self.argswidget.loadProfile(profile)
             
-        # get saved downsample factor
-        downsample = settings.value("plot/downsample", cast=int, defaultValue=1000)
-        self.argswidget.setDownsampleFactor(downsample)
+        # get saved subsample factor
+        subsample = settings.value("plot/subsample", cast=int, defaultValue=1000)
+        self.argswidget.setSubsampleFactor(subsample)
         
         return super().show()
         
@@ -113,8 +94,6 @@ class DetectorBankGui(QMainWindow):
         settings = Settings()
         settings.beginGroup("window")
         settings.setValue("geometry", self.saveGeometry())
-        settings.setValue("viewMode", self._viewmode)
-        settings.setValue(f"viewModes/{self._viewmode}", self.saveState())
         settings.endGroup()
         
         profile = self.argswidget.currentProfile #if not self.argswidget.currentProfileAltered else "None"
@@ -165,7 +144,7 @@ class DetectorBankGui(QMainWindow):
             self.sr, 
             params, 
             self.audioplot.getSegments(), 
-            self.argswidget.getDownsampleFactor())
+            self.argswidget.getSubsampleFactor())
         
         self._progressBar.setMaximum(numSamples)
         self._progressQueue.clear()
@@ -184,7 +163,7 @@ class DetectorBankGui(QMainWindow):
             inc = self._progressQueue.popleft()
             self._progressBar.setValue(self._progressBar.value()+inc)
             
-    def createDockWidget(self, widget, area, title, viewmode, key=None):
+    def createDockWidget(self, widget, area, title, key=None):
         if area in self.dockAreas:
             area = self.dockAreas[area]
         dock = QDockWidget()
@@ -196,32 +175,7 @@ class DetectorBankGui(QMainWindow):
             self.dockWidgets = {}
         if key is None:
             key = title
-        self.dockWidgets[key] = WidgetView(dock, viewmode)
-    
-    def _switchView(self, mode, savePrevious=True):
-        """ Switch between showing 'input', 'output' or 'all' widgets. """ 
-        if mode == self._viewmode:
-            # nothing to be done
-            return
-        settings = Settings()
-        if savePrevious:
-            # save current state
-            state = self.saveState()
-            settings.setValue(f"window/viewModes/{self._viewmode}", state)
-            
-        self._viewmode = mode
-        state = settings.value(f"window/viewModes/{self._viewmode}")
-        if state is not None:
-            self.restoreState(state)
-        else:
-            for widget, viewmode in self.dockWidgets.values():
-                visible = True if mode == "all" or viewmode == mode else False
-                widget.setVisible(visible)
-                
-    def _viewTabChanged(self, idx):
-        """ Slot for view tab bar changed signal """
-        mode = self._viewTabs.tabText(idx).lower()
-        self._switchView(mode)
+        self.dockWidgets[key] = dock
             
     def _openGuiDocs(self):
         """ Open GUI docs in browser """
@@ -232,9 +186,13 @@ class DetectorBankGui(QMainWindow):
         QDesktopServices.openUrl(QUrl("https://keziah55.github.io/DetectorBank/"))
         
     def _about(self):
-        msg = "DetectorBank GUI\n(C) Keziah Milligan"
-        QMessageBox.about(self, "DetectorBank GUI", msg)
+        qt_api_version = qtpy.PYQT_VERSION if qtpy.API_NAME.startswith("PyQt") else qtpy.PYSIDE_VERSION
+        msg = ["DetectorBank GUI",
+               f"Python {sys.version_info.major}.{sys.version_info.minor}",
+               f"Qt {qtpy.QT_VERSION}, {qtpy.API_NAME} {qt_api_version}",
+               "(C) Keziah Milligan"]
         
+        QMessageBox.about(self, "DetectorBank GUI", "\n".join(msg))
         
     def _createActions(self):
         self.openAudioFileAction = QAction(
@@ -265,21 +223,13 @@ class DetectorBankGui(QMainWindow):
         self.aboutAction = QAction("&About", self, triggered=self._about)
             
     def _createToolBars(self):
-        
-        self.viewToolBar = QToolBar("View")
-        self.viewToolBar.setObjectName("View")
-        self._viewTabs = QTabBar()
-        for label in ["All"]:#, "Output"]:
-            idx = self._viewTabs.addTab(label)
-            self._viewTabs.setTabToolTip(idx, f"Show {label.lower()} widgets")
-        self._viewTabs.currentChanged.connect(self._viewTabChanged)
-        self.viewToolBar.addWidget(self._viewTabs)
         # self.addToolBar(self.viewToolBar)
         
         # self.runToolBar = self.addToolBar("Run")
         # self.runToolBar.setObjectName("Run")
         # self.runToolBar.addAction(self.openAudioFileAction)
         # self.runToolBar.addAction(self.analyseAction)
+        pass
         
     def _createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")

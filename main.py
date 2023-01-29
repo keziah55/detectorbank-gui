@@ -5,7 +5,8 @@ DetectorBank GUI.
 """
 import sys
 import argparse
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QSplashScreen
+from qtpy.QtGui import QPixmap
 from detectorbankgui.mainwindow import DetectorBankGui
 
 if __name__ == '__main__':
@@ -22,6 +23,12 @@ if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     
+    pixmap = QPixmap("images/splash.png")
+    splash = QSplashScreen(pixmap)
+    splash.show()
+    
     window = DetectorBankGui(audioFile=args.input, profile=args.profile)
+    window.show()
+    splash.finish(window)
     
     sys.exit(app.exec_())
