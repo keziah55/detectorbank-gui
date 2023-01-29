@@ -12,7 +12,7 @@ from customQObjects.gui import getIconFromTheme
 from .audioplot import AudioPlotWidget
 from .analyser import Analyser
 from .argswidget import ArgsWidget
-from .hopfplot import HopfPlot
+from .resultsplotwidget import ResultsPlotWidget
 from .invalidargexception import InvalidArgException
 from collections import deque, namedtuple
 
@@ -34,11 +34,11 @@ class DetectorBankGui(QMainWindow):
         self._createToolBars()
         self._createMenus()
         
-        # actions have to exist before hopfplot (but after audioplot)
+        # actions have to exist before resultsplot (but after audioplot)
         # might need to come up with a better solution than this...
-        self.hopfplot = HopfPlot(self)
+        self.resultsplot = ResultsPlotWidget(self)
         
-        self.analyser = Analyser(self.hopfplot)
+        self.analyser = Analyser(self.resultsplot)
         
         self.statusBar()
         self._statusTimeout = 1500
@@ -55,7 +55,7 @@ class DetectorBankGui(QMainWindow):
         
         widgets = {"audioinput":('Audio Input', self.audioplot, 'left', 'input'),
                    "args":('Parameters',self.argswidget, 'left', 'input'),
-                   "output":("Output", self.hopfplot, 'right', 'output')}
+                   "output":("Output", self.resultsplot, 'right', 'output')}
         
         for key, values in widgets.items():
             name, widget, area, viewmode = values
@@ -130,7 +130,7 @@ class DetectorBankGui(QMainWindow):
     def sr(self, value):
         self._sr = value
         self.argswidget.setParams(sr=value)
-        self.hopfplot.setSampleRate(value)
+        self.resultsplot.setSampleRate(value)
         
     @property
     def running(self):
