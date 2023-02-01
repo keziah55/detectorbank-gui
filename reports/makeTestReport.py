@@ -44,7 +44,7 @@ class ReportWriter:
         self.duration = self._getDuration(ts)
         
         self.qtApis = qt if qt is not None else ["PyQt5", "PySide2", "PyQt6", "PySide6"]
-        if sys.version_info.major == 3 and sys.version_info.minor == 1:
+        if sys.version_info.major == 3 and sys.version_info.minor == 11:
             self.qtApis.remove("PySide2")
         self.qtApisLower = [s.lower() for s in self.qtApis]
         
