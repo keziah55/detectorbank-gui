@@ -134,5 +134,18 @@ class TestFrequencyBandwidthDialog:
         
         self.widget.freqRangeWidgets[2].setSelected()
         
+        
+    def test_clear_table(self, setup, qtbot):
+        
+        f = np.random.rand(10) * 440
+        b = np.ones(len(f))
+        dc = np.column_stack((f, b))
+        self.widget.setValues(dc)
+        
         with qtbot.waitSignal(self.widget.clearTableButton.clicked):
             qtbot.mouseClick(self.widget.clearTableButton, Qt.LeftButton)
+            
+        for row in range(self.widget.table.rowCount()):
+            for col in range(2):
+                item = self.widget.table.item(row, col)
+                assert item is None
