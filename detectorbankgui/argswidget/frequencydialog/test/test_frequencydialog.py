@@ -1,5 +1,5 @@
 from detectorbankgui.argswidget.frequencydialog import FrequencyDialog
-from detectorbankgui.argswidget.frequencydialog.noterangepage import NoteRangePage
+from qtpy.QtCore import Qt
 import numpy as np
 import pytest
 
@@ -48,7 +48,17 @@ class TestFrequencyBandwidthDialog:
             assert np.isclose(page.widgets[which].freq, 440*2**(n/12))
             assert page.widgets[which].freqLabel.text() == f"{440*2**(n/12):g} Hz"
             assert page.doneButton.isEnabled() is both_valid
-        assert np.all(np.isclose(page.value, np.array([440*2**(n/12) for n in range(valid[0][1],valid[1][1]+1)])))
+            
+        expected = np.array([440*2**(n/12) for n in range(valid[0][1],valid[1][1]+1)])
+        with qtbot.waitSignal(page.values, check_params_cb=lambda arr: np.all(np.isclose(arr, expected))):
+            qtbot.mouseClick(page.doneButton, Qt.LeftButton)
+        assert np.all(np.isclose(page.value, expected))
+        
+        # check values in table
+        for row in range(self.widget.table.rowCount()):
+            item = self.widget.table.item(row, 0)
+            assert item.text() == f"{expected[row]:g}"
+            assert item.flags() == Qt.ItemIsSelectable | Qt.ItemIsEnabled
         
     def test_frequency_equation(self, setup, qtbot):
         
@@ -86,8 +96,17 @@ class TestFrequencyBandwidthDialog:
         
         assert page.doneButton.isEnabled()
         
-        assert np.all(np.isclose(page.value, np.array([refFreq*2**(n/edo) for n in range(n0, n1+1)])))
+        expected = np.array([refFreq*2**(n/edo) for n in range(n0, n1+1)])
+        with qtbot.waitSignal(page.values, check_params_cb=lambda arr: np.all(np.isclose(arr, expected))):
+            qtbot.mouseClick(page.doneButton, Qt.LeftButton)
+        assert np.all(np.isclose(page.value, expected))
         
+        # check values in table
+        for row in range(self.widget.table.rowCount()):
+            item = self.widget.table.item(row, 0)
+            assert item.text() == f"{expected[row]:g}"
+            assert item.flags() == Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            
+    def test_frequency_manual(self, setup, qtbot):
         
-        
-        
+        self.widget.freqRangeWidgets[2].setSelected()
