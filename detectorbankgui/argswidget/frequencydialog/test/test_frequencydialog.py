@@ -60,6 +60,8 @@ class TestFrequencyBandwidthDialog:
             item = self.widget.table.item(row, 0)
             assert item.text() == f"{expected[row]:g}"
             assert item.flags() == Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            
+        qtbot.wait(100)
         
     def test_frequency_equation(self, setup, qtbot):
         
@@ -182,8 +184,13 @@ class TestFrequencyBandwidthDialog:
                 assert item.text() == f"{expected:g}"
         
         self.widget._valueChanged() # table.itemChanged not emitted by table.setItem?
-        qtbot.wait(3000)
         assert self.widget.okButton.isEnabled() is True
+        
+        # was getting weird 'widget already deleted' errors
+        # don't know why
+        # but disconnecting these here seems to sort it
+        self.widget.freqRangeWidgets[0].page.timers["start"].timeout.disconnect()
+        self.widget.freqRangeWidgets[0].page.timers["end"].timeout.disconnect()
         
     def test_clear_table(self, setup, qtbot):
         

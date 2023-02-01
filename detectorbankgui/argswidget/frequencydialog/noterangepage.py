@@ -67,7 +67,7 @@ class NoteRangePage(AbstractPage):
         for key in self.widgets:
             timer = QTimer()
             timer.setSingleShot(True)
-            timer.setInterval(100)
+            timer.setInterval(50)
             self.timers[key] = timer
             
         self.timers["start"].timeout.connect(lambda: self._textChanged("start"))

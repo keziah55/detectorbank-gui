@@ -18,9 +18,15 @@ if [[ -z $detBankFound ]]; then
     echo "Please install DetectorBank or set PYTHON_VERSION and/or DETBANKDIR appropriately"
     echo "See https://github.com/keziah55/DetectorBank for installation instructions"
     exit 1
+else
+    for file in $detBankFound; do # not the best way to do this, but it works
+        DIR="$(dirname "${file}")"
+        export PYTHONPATH=$DIR:$PYTHONPATH
+    done
 fi
 
-export PYTHONPATH=$detBankDir:$PYTHONPATH
+
+#export PYTHONPATH=$detBankDir:$PYTHONPATH
 
 origDir="$PWD"
 testDir="../detectorbank-gui-test"
@@ -54,7 +60,7 @@ echo $PWD
 ../bin/python -m pip -V
 
 ../bin/python -m pip install -r requirements.txt --no-cache-dir --no-warn-script-location
-../bin/python -m pip install pytest pytest-qt pytest-cov pytest-profiling --no-cache-dir --no-warn-script-location
+../bin/python -m pip install pytest pytest-qt pytest-cov pytest-profiling setuptools --no-cache-dir --no-warn-script-location
 
 mkdir "$resultsDir"
 
