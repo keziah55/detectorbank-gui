@@ -5,7 +5,7 @@ beautifulsoup4
 lxml
 qtpy
 PyQt5
-PySide2
+PySide2>=5.15
 PyQt6
 PySide6
 pyqtgraph
