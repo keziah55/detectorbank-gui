@@ -225,19 +225,39 @@ class FrequencyDialog(QDialog):
     def _valueChanged(self):
         self.okButton.setEnabled(self._validate())
         
+    @staticmethod
+    def _strIsNumeric(s):
+        try:
+            float(s)
+        except:
+            return False
+        else:
+            return True
+        
     def _validate(self):
         if self.table.rowCount() == 0:
             return False
         # iterate through table
         # if any row has a None value and a non-None value, table is invalid
         # (if both items in row are None, can be skiped)
+        tableIsEmpty = True # table could be empty rows
         for row in range(self.table.rowCount()):
             freqItem = self.table.item(row, 0)
             bwItem = self.table.item(row, 1)
             boolF = freqItem is not None and freqItem.text().strip() != ""
             boolBw = bwItem is not None and bwItem.text().strip() != ""
-            if boolF ^ boolBw:
+            if boolF ^ boolBw: # xor
                 return False
+            # if the contents of either cell is a non-numeric string, return False
+            if boolF and not self._strIsNumeric(freqItem.text()):
+                return False
+            if boolBw and not self._strIsNumeric(bwItem.text()):
+                return False
+            if boolF or boolBw:
+                # either f or bw has a valid value, so table isn't empty
+                tableIsEmpty = False
+        if tableIsEmpty:
+            return False
         return True
         
     @property

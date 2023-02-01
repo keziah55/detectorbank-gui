@@ -1,4 +1,5 @@
 from detectorbankgui.argswidget.frequencydialog import FrequencyDialog
+from qtpy.QtWidgets import QTableWidgetItem
 from qtpy.QtCore import Qt
 import numpy as np
 import pytest
@@ -130,10 +131,59 @@ class TestFrequencyBandwidthDialog:
             assert item.text() == f"{value:g}"
             assert item.flags() == Qt.ItemIsSelectable | Qt.ItemIsEnabled
             
-    def test_frequency_manual(self, setup, qtbot):
+    def test_manual(self, setup, qtbot):
         
         self.widget.freqRangeWidgets[2].setSelected()
+        self.widget.bwWidgets[1].setSelected()
         
+        for _ in range(4):
+            with qtbot.waitSignal(self.widget.addRowButton.clicked):
+                qtbot.mouseClick(self.widget.addRowButton, Qt.LeftButton)
+                
+        assert self.widget.table.rowCount() == 4
+        assert self.widget._validate() is False
+        assert self.widget.okButton.isEnabled() is False
+        
+        # set some frequencies
+        freq = np.random.rand(3) * 440
+        for row, f in enumerate(freq):
+            self.widget.table.setItem(row, 0, QTableWidgetItem(f"{f:g}"))
+            
+        assert self.widget._validate() is False
+        assert self.widget.okButton.isEnabled() is False
+        
+        # set some bandwidths
+        bw = np.array([3.5, 4.9, 0])
+        for idx in [0, 2]:
+            self.widget.table.setItem(idx, 1, QTableWidgetItem(f"{bw[idx]:g}"))
+        
+        assert self.widget._validate() is False
+        assert self.widget.okButton.isEnabled() is False
+        
+        idx = 1
+        self.widget.table.setItem(idx, 1, QTableWidgetItem(f"{bw[idx]:g}"))
+                
+        assert self.widget._validate() is True
+        
+        # set invalid value
+        self.widget.table.setItem(3, 0, QTableWidgetItem("blah"))
+        assert self.widget._validate() is False
+        # back to valid
+        self.widget.table.setItem(3, 0, QTableWidgetItem(""))
+        
+        assert self.widget._validate()
+        
+        for row in range(self.widget.table.rowCount()):
+            if row == 3:
+                continue
+            for col in range(2):
+                item = self.widget.table.item(row, col)
+                expected = freq[row] if col == 0 else bw[row]
+                assert item.text() == f"{expected:g}"
+        
+        self.widget._valueChanged() # table.itemChanged not emitted by table.setItem?
+        qtbot.wait(3000)
+        assert self.widget.okButton.isEnabled() is True
         
     def test_clear_table(self, setup, qtbot):
         
