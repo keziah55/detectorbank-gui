@@ -64,8 +64,14 @@ echo $PWD
 
 mkdir "$resultsDir"
 
-# test with pyside2, then pyqt5
-for qt_api in pyside2 pyqt5 pyside6 pyqt6; do
+pythonVersion=`python3 -c "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}')"`
+if [[ $pythonVersion == "3.11" ]]; then
+    declare -a qt_bindings=("pyqt5" "pyside6" "pyqt6")
+else
+    declare -a qt_bindings=("pyside2" "pyqt5" "pyside6" "pyqt6")
+fi
+
+for qt_api in "${qt_bindings[@]}"; do #pyside2 pyqt5 pyside6 pyqt6; do
     export QT_API=$qt_api
     export PYTEST_QT_API=$qt_api
     echo "QT_API: $QT_API"
