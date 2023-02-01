@@ -210,7 +210,3 @@ class TestArgsWidget:
             self.widget.setSubsampleFactor(subsample)
             
         assert self.widget.getSubsampleFactor() == subsample
-        
-    @pytest.mark.skip("test not written yet")
-    def test_freq_bw_dialog(self, setup, qtbot):
-        pass

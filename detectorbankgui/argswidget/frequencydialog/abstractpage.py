@@ -26,6 +26,8 @@ class AbstractPage(QWidget):
         self.doneButton = QPushButton(f"Set {name}")
         self.doneButton.clicked.connect(self._emitValues)
         
+        self.valid.connect(self.doneButton.setEnabled)
+        
         self.layout = QGridLayout()
         self.setLayout(self.layout)
         

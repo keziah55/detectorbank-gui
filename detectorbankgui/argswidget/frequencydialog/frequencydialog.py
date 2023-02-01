@@ -10,38 +10,64 @@ from qtpy.QtWidgets import (QDialog, QTableWidget, QTableWidgetItem, QRadioButto
 from qtpy.QtCore import Signal, QObject, Qt, QTimer
 from customQObjects.widgets import GroupBox, StackedWidget
 from customQObjects.gui import getIconFromTheme
-from .noterange import NoteRangePage
-from .equationdialog import EquationPage
+from .noterangepage import NoteRangePage
+from .equationpage import EquationPage
 from .bandwidthpage import BandwidthPage
 import numpy as np
     
-class freqRangeSelector(QObject):
+class PageSelector(QObject):
+    """ Object that takes a widget `page` and creates a radio button  for it.
+    
+        Parameters
+        ----------
+        key : str
+            Identifier for this page
+        page : QWidget
+            Widget to manage
+        label : str
+            Label to display
+    """
     
     selected = Signal(str, str)
+    """ **signal** selected(str `key`, str `label`) 
     
-    def __init__(self, name, page, prettyName=None):
+        Emitted when the radio button is checked, with identifying information
+    """
+    
+    def __init__(self, key, page, label=None):
         super().__init__()
         
-        self.name = name
+        self.key = key
         self.page = page
-        if prettyName is None:
-            prettyName = name
-        self.prettyName = prettyName
-        self.radioButton = QRadioButton(self.prettyName)
+        if label is None:
+            label = key
+        self.label = label
+        self.radioButton = QRadioButton(self.label)
         self.radioButton.toggled.connect(self._buttonToggled)
         
     @property
     def isSelected(self):
+        """ Return True if the radio button is checkde """
         return self.radioButton.isChecked()
     
     def setSelected(self):
+        """ Set radio button to checked """
         self.radioButton.setChecked(True)
         
     def _buttonToggled(self, checked):
+        """ If radio button is checked, emit `selected` signal """
         if checked:
-            self.selected.emit(self.name, self.prettyName)
+            self.selected.emit(self.key, self.label)
         
 class FrequencyDialog(QDialog):
+    """ Dialog for users to set frequencies and bandwidths. 
+    
+        There are a number of different ways to set each. Frequencies can be
+        set by giving a note range (NoteRangePage), setting values in an 
+        equation (EquationPage) or manually entering in a table.
+        Bandwidths can be a constant value for each detector (BandwidthPage)
+        or entered manually.
+    """
     
     def __init__(self, *args, defaultFreqs=[], defaultBws=[], **kwargs):
         super().__init__(*args, **kwargs)
@@ -54,7 +80,7 @@ class FrequencyDialog(QDialog):
         cancelButton.clicked.connect(self.reject)
         self.okButton.setEnabled(False)
         
-        # table
+        # table of selected frequencies and bandwidths
         self.table = QTableWidget(0,2) 
         self._setTableFrequencies([])
         self._readOnlyFlags = Qt.ItemIsSelectable | Qt.ItemIsEnabled
@@ -81,40 +107,40 @@ class FrequencyDialog(QDialog):
         self.tableEditTimer.timeout.connect(self._valueChanged)
         self.table.itemChanged.connect(self.tableEditTimer.start)
         
-        # frequency
+        # frequency options
         self.freqRangeSelect = GroupBox("Frequency input")
         self.freqRangeStack = StackedWidget()
-        self.freqRangeWidgets = {
-            "note_range":freqRangeSelector("note_range", NoteRangePage(invalidColour="#790000"), "Note range"), 
-            "equation":freqRangeSelector("equation", EquationPage(), "Equation"), 
-            "manual":freqRangeSelector("manual", QWidget(), "Manual")}
+        self.freqRangeWidgets = [
+            PageSelector("note_range", NoteRangePage(invalidColour="#790000"), "Note range"), 
+            PageSelector("equation", EquationPage(), "Equation"), 
+            PageSelector("manual", QWidget(), "Manual")]
         
-        for selector in self.freqRangeWidgets.values():
+        for selector in self.freqRangeWidgets:
             self.freqRangeSelect.addWidget(selector.radioButton)
             selector.selected.connect(self._changeFreqPage)
-            self.freqRangeStack.addWidget(selector.page, selector.name)
+            self.freqRangeStack.addWidget(selector.page, selector.key)
             if hasattr(selector.page, "values"):
                 selector.page.values.connect(self._setTableFrequencies)
         self.freqRangeSelect.addWidget(self.freqRangeStack)
             
-        self.freqRangeWidgets["note_range"].setSelected()
+        self.freqRangeWidgets[0].setSelected()
         
-        # bandwidth
+        # bandwidth options
         self.bwSelect = GroupBox("Bandwidth input")
         self.bwStack = StackedWidget()
-        self.bwWidgets = {
-            "constant":freqRangeSelector("constant", BandwidthPage(), "Constant"), 
-            "manual":freqRangeSelector("manual", QWidget(), "Manual")}
+        self.bwWidgets = [
+            PageSelector("constant", BandwidthPage(), "Constant"), 
+            PageSelector("manual", QWidget(), "Manual")]
         
-        for selector in self.bwWidgets.values():
+        for selector in self.bwWidgets:
             self.bwSelect.addWidget(selector.radioButton)
             selector.selected.connect(self._changeBwPage)
-            self.bwStack.addWidget(selector.page, selector.name)
+            self.bwStack.addWidget(selector.page, selector.key)
             if hasattr(selector.page, "values"):
                 selector.page.values.connect(self._setTableBandwidths)
         self.bwSelect.addWidget(self.bwStack)
         
-        self.bwWidgets["constant"].setSelected()
+        self.bwWidgets[0].setSelected()
         
         freqBwLayout = QVBoxLayout()
         freqBwLayout.addWidget(self.freqRangeSelect)
@@ -152,6 +178,7 @@ class FrequencyDialog(QDialog):
     def _clearTable(self):
         self.table.clear()
         self.table.setHorizontalHeaderLabels(["Frequency (Hz)", "Bandwidth (Hz)"])
+        self.table.resizeColumnsToContents()
         
     def _setTableFrequencies(self, freq):
         self._clearTable()
@@ -236,6 +263,7 @@ class FrequencyDialog(QDialog):
     def setValues(self, detChars):
         """ Fill in manual frequencies and bandwidths """
         for w in [self.freqRangeWidgets, self.bwWidgets]:
-            w["manual"].setSelected()
+            # 'manual' freqs and bandwidths
+            w[-1].setSelected()
         self._setTableFrequencies(detChars[:,0])
         self._setTableBandwidths(detChars[:,1])
