@@ -107,6 +107,32 @@ class TestFrequencyBandwidthDialog:
             assert item.text() == f"{expected[row]:g}"
             assert item.flags() == Qt.ItemIsSelectable | Qt.ItemIsEnabled
             
+    def test_bandwidth_constant(self, setup, qtbot):
+        
+        # set some frequencies, so there are rows in table
+        self.widget._setTableFrequencies(np.random.rand(10) * 440)
+        
+        assert self.widget.bwWidgets[0].isSelected
+        
+        page = self.widget.bwWidgets[0].page
+        value = 2.34
+        with qtbot.waitSignal(page.box.valueChanged):
+            page.box.setValue(value)
+            
+        assert page.doneButton.isEnabled()
+        with qtbot.waitSignal(page.values, check_params_cb=lambda val: val==value):
+            qtbot.mouseClick(page.doneButton, Qt.LeftButton)
+        assert page.value == value
+        
+        # check values in table
+        for row in range(self.widget.table.rowCount()):
+            item = self.widget.table.item(row, 1)
+            assert item.text() == f"{value:g}"
+            assert item.flags() == Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            
     def test_frequency_manual(self, setup, qtbot):
         
         self.widget.freqRangeWidgets[2].setSelected()
+        
+        with qtbot.waitSignal(self.widget.clearTableButton.clicked):
+            qtbot.mouseClick(self.widget.clearTableButton, Qt.LeftButton)

@@ -93,6 +93,7 @@ class FrequencyDialog(QDialog):
             self.addRowButton.setText("Add row")
         self.addRowButton.setEnabled(False)
         self.addRowButton.clicked.connect(self._addTableRow)
+        self.addRowButton.setToolTip("Add row to table")
         
         self.clearTableButton = QPushButton()
         if (icon := getIconFromTheme('edit-clear')) is not None:
@@ -100,6 +101,7 @@ class FrequencyDialog(QDialog):
         else:
             self.clearTableButton.setText("Clear table")
         self.clearTableButton.clicked.connect(self._clearTable)
+        self.clearTableButton.setToolTip("Clear table")
         
         self.tableEditTimer = QTimer()
         self.tableEditTimer.setSingleShot(True)

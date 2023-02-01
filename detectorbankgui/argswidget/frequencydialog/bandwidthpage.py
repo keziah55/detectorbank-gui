@@ -9,6 +9,8 @@ from customQObjects.widgets import DoubleSpinBox
 from .abstractpage import AbstractPage, RightLabel
 
 class BandwidthPage(AbstractPage):
+    """ Widget to select a bandwidth """
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, name="bandwidths", **kwargs)
         

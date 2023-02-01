@@ -16,9 +16,20 @@ class RightLabel(QLabel):
         self.setAlignment(Qt.AlignCenter)
         
 class AbstractPage(QWidget):
+    """ Base class for 'page' frequency/bandwidth widgets in FrequencyDialog """
+    
     valid = Signal(bool)
+    """ **signal** valid(bool `valid`) 
+    
+        Emitted when data validity changes
+    """
     
     values = Signal(object)
+    """ **signal** values(`value`)
+    
+        Emitted with current value (array of frequencies or bandwidth float)
+        when button clicked.
+    """
     
     def __init__(self, *args, name="", **kwargs):
         super().__init__(*args, **kwargs)
