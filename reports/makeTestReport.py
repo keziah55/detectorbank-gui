@@ -6,6 +6,7 @@ Script to create html report from pytest results for both PyQt5 and PySide2.
 
 import xml.etree.ElementTree as ET
 from datetime import datetime
+import sys
 import os.path
 import re
 import pkg_resources
@@ -29,7 +30,7 @@ class ReportWriter:
             Timestamp of beginning of tests, as string in ISO format.
             If not supplied, current time will be used.
         qt : list, optional
-            List of Qt APIs. If not provided, this defaults to ["PyQt5", "PySide2"]
+            List of Qt APIs. If not provided, this defaults to ["PyQt5", "PySide2", "PyQt6", "PySide6"]
     """
     
     fmt = "%a %d %b %Y, %H:%M:%S"
@@ -41,7 +42,10 @@ class ReportWriter:
         ts = float(ts) if ts is not None else ts
         self.ts = self._getTimestamp(ts)
         self.duration = self._getDuration(ts)
+        
         self.qtApis = qt if qt is not None else ["PyQt5", "PySide2", "PyQt6", "PySide6"]
+        if sys.version_info.major == 3 and sys.version_info.minor == 1:
+            self.qtApis.remove("PySide2")
         self.qtApisLower = [s.lower() for s in self.qtApis]
         
     @staticmethod
