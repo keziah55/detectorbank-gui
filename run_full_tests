@@ -12,7 +12,8 @@ else
     detBankDir="$DETBANKDIR"
 fi
 
-if [ ! -e "$detBankDir/detectorbank.py" ]; then
+detBankFound=`find $detBankDir -name detectorbank.py -type f`
+if [[ -z $detBankFound ]]; then
     echo "detectorbank.py not found in $detBankDir"
     echo "Please install DetectorBank or set PYTHON_VERSION and/or DETBANKDIR appropriately"
     echo "See https://github.com/keziah55/DetectorBank for installation instructions"
