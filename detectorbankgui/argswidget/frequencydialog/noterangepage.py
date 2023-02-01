@@ -53,7 +53,7 @@ class NoteRangeInfo:
     
 
 class NoteRangePage(AbstractPage):
-    """ Widget """
+    """ Widget to set start and stop note """
     
     def __init__(self, *args, defaultStart="A0", defaultEnd="C8", invalidColour="#ff0000", **kwargs):
         super().__init__(*args, name="frequencies", **kwargs)

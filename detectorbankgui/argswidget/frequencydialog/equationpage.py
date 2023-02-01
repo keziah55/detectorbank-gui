@@ -12,6 +12,7 @@ from .abstractpage import AbstractPage, RightLabel
 import numpy as np
 
 class EquationPage(AbstractPage):
+    """ Widget to set frequency equation variables """
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, name="frequencies", **kwargs)
@@ -68,7 +69,7 @@ class EquationPage(AbstractPage):
         n1 -= 1
         f0 = freq * 2**(n0/edo)
         f1 = freq * 2**(n1/edo)
-        self.equationLabel.setText(f"{freq:g} * 2^({n0}/{edo}) = {f0:g} Hz\n{freq:g} * 2^({n1}/{edo}) = {f1:g} HZ")
+        self.equationLabel.setText(f"{freq:g} * 2^({n0}/{edo}) = {f0:g} Hz\n{freq:g} * 2^({n1}/{edo}) = {f1:g} Hz")
         
     @property
     def value(self) -> np.ndarray:
