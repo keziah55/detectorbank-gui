@@ -68,9 +68,11 @@ pythonVersion=`python3 -c "import sys; v=sys.version_info; print(f'{v.major}.{v.
 if [[ $pythonVersion == "3.11" ]]; then
     echo "3.11"
     declare -a qt_bindings=("pyqt5" "pyside6" "pyqt6")
+    declare -a qt_bindings_pretty=("PyQt5" "PySide6" "PyQt6")
 else
     declare -a qt_bindings=("pyside2" "pyqt5" "pyside6" "pyqt6")
-fi
+    declare -a qt_bindings_pretty=("PySide2" "PyQt5" "PySide6" "PyQt6")
+fis
 
 for qt_api in "${qt_bindings[@]}"; do
     export QT_API=$qt_api
@@ -94,7 +96,7 @@ join () {
   shift
   echo "$*"
 }
-qts=`join , "${qt_bindings[@]}"`
+qts=`join , "${qt_bindings_pretty[@]}"`
 
 ../bin/python reports/makeTestReport.py --out "$resultsDir/report.html" --ts $ts --qt $qts
 

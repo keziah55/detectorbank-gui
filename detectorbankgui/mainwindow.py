@@ -219,6 +219,7 @@ class DetectorBankGui(QMainWindow):
             self.exitAction.setIcon(icon)
             
         self.openGuiDocsAction = QAction("&Open DetectorBank GUI documentation", self,
+                                         shortcut="F1",
                                          triggered=self._openGuiDocs)
         self.openDocsAction = QAction("&Open DetectorBank documentation", self,
                                       triggered=self._openDocs)
