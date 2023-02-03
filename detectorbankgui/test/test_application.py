@@ -11,4 +11,6 @@ def test_app(qtbot, audiofile):
         
     # qtbot.wait(3000)
     
+    qtbot.wait(500)
+    
     assert len(app.resultsplot._plots) == 1
