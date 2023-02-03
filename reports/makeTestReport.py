@@ -536,6 +536,7 @@ if __name__ == "__main__":
                         help='Qt bindings used in tests')
     
     args = parser.parse_args()
-    writer = ReportWriter(args.results, args.out, args.ts, args.qt)
+    qt = args.qt.split(',') if args.qt is not None else None
+    writer = ReportWriter(args.results, args.out, args.ts, qt)
     writer.writeReport()
     
