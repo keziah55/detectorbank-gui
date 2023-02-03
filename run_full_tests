@@ -89,6 +89,13 @@ if [ -d $testDataDir ]; then
     mv "$testDataDir" "$resultsDir"
 fi
 
-../bin/python reports/makeTestReport.py --out "$resultsDir/report.html" --ts $ts
+join () {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+qts=`join , "${qt_bindings[@]}"`
+
+../bin/python reports/makeTestReport.py --out "$resultsDir/report.html" --ts $ts --qt $qts
 
 mv "$resultsDir" "$origDir"
