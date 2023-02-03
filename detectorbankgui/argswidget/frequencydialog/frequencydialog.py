@@ -268,9 +268,9 @@ class FrequencyDialog(QDialog):
         bws = []
         for row in range(self.table.rowCount()):
             # _validate will be False if one item in row is None but other isn't
-            if (item := self.table.item(row, 0)) is not None:
+            if (item := self.table.item(row, 0)) is not None and item.text().strip()!="":
                 freqs.append(float(item.text()))
-            if (item := self.table.item(row, 1)) is not None:
+            if (item := self.table.item(row, 1)) is not None and item.text().strip()!="":
                 bws.append(float(item.text()))
         return np.column_stack((np.array(freqs), np.array(bws)))
     

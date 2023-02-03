@@ -9,6 +9,6 @@ def test_app(qtbot, audiofile):
     with qtbot.waitSignal(app.analyser.finished):
         app._doAnalysis()
         
-    qtbot.wait(3000)
+    # qtbot.wait(3000)
     
     assert len(app.resultsplot._plots) == 1

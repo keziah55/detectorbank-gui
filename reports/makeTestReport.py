@@ -521,6 +521,9 @@ class ReportWriter:
         html = self.makeReport()
         with open(self.out, "w") as fileobj:
             fileobj.write(html)
+        print()
+        if self.duration is not None:
+            print(f"Tests completed in {self.duration}")
         print(f"Test report written to {os.path.abspath(self.out)}")
     
 if __name__ == "__main__":
