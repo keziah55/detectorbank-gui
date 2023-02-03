@@ -542,5 +542,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     qt = args.qt.split(',') if args.qt is not None else None
     writer = ReportWriter(args.results, args.out, args.ts, qt)
-    # writer.writeReport()
-    
+    writer.writeReport()
