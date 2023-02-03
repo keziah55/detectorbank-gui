@@ -70,7 +70,7 @@ if [[ $pythonVersion == "3.11" ]]; then
     declare -a qt_bindings=("pyqt5" "pyside6" "pyqt6")
 else
     declare -a qt_bindings=("pyside2" "pyqt5" "pyside6" "pyqt6")
-fis
+fi
 
 for qt_api in "${qt_bindings[@]}"; do
     export QT_API=$qt_api
