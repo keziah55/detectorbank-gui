@@ -168,21 +168,25 @@ class FrequencyDialog(QDialog):
         self.setWindowTitle("Set frequencies and bandwidths")
         
     def _changeFreqPage(self, key, prettyName):
+        """Change visible frequency selector page  """
         self.freqRangeStack.setCurrentKey(key)
         editable = key == "manual"
         self._setFreqEditable(editable)
         
     def _changeBwPage(self, key, prettyName):
+        """ Change visible bandwidth selector page """
         self.bwStack.setCurrentKey(key)
         editable = key == "manual"
         self._setBwEditable(editable)
         
     def _clearTable(self):
+        """ Clear table """
         self.table.clear()
         self.table.setHorizontalHeaderLabels(["Frequency (Hz)", "Bandwidth (Hz)"])
         self.table.resizeColumnsToContents()
         
     def _setTableFrequencies(self, freq):
+        """ Clear table and set `freq` as frequencies """
         self._clearTable()
         self.table.setRowCount(len(freq))
         for row, f in enumerate(freq):
@@ -202,12 +206,15 @@ class FrequencyDialog(QDialog):
         self._valueChanged()
             
     def _setFreqEditable(self, editable):
+        """ Make frequency column editable """
         self._setTableEditable(editable, 0)
             
     def _setBwEditable(self, editable):
+        """ Make bandwidth column editable """
         self._setTableEditable(editable, 1)
             
     def _setTableEditable(self, editable, column):
+        """ Set given `column` index editable or readonly. """
         for row in range(self.table.rowCount()):
             if (item := self.table.item(row, column)) is not None:
                 flags = self._editableFlags if editable else self._readOnlyFlags
@@ -219,14 +226,17 @@ class FrequencyDialog(QDialog):
             self.table.editItem(item)
             
     def _addTableRow(self):
+        """ Add row to table """
         row = self.table.rowCount()
         self.table.insertRow(row)
         
     def _valueChanged(self):
+        """ Enable/disable Ok button depending on validity of current values """
         self.okButton.setEnabled(self._validate())
         
     @staticmethod
     def _strIsNumeric(s):
+        """ Return True if string `s` can be cast to float. """
         try:
             float(s)
         except:
@@ -235,35 +245,15 @@ class FrequencyDialog(QDialog):
             return True
         
     def _validate(self):
+        """ Return True if table is valid, else False. """
         return False if self.values is None else True
-        
-    #     if self.table.rowCount() == 0:
-    #         return False
-    #     # iterate through table
-    #     # if any row has a None value and a non-None value, table is invalid
-    #     # (if both items in row are None, can be skiped)
-    #     tableIsEmpty = True # table could be empty rows
-    #     for row in range(self.table.rowCount()):
-    #         freqItem = self.table.item(row, 0)
-    #         bwItem = self.table.item(row, 1)
-    #         boolF = freqItem is not None and freqItem.text().strip() != ""
-    #         boolBw = bwItem is not None and bwItem.text().strip() != ""
-    #         if boolF ^ boolBw: # xor
-    #             return False
-    #         # if the contents of either cell is a non-numeric string, return False
-    #         if boolF and not self._strIsNumeric(freqItem.text()):
-    #             return False
-    #         if boolBw and not self._strIsNumeric(bwItem.text()):
-    #             return False
-    #         if boolF or boolBw:
-    #             # either f or bw has a valid value, so table isn't empty
-    #             tableIsEmpty = False
-    #     if tableIsEmpty:
-    #         return False
-    #     return True
-        
+                
     @property
     def values(self):
+        """ Return array of frequencies and bandwidths from table. 
+        
+            If table is invlaid, return None.
+        """
         if self.table.rowCount() == 0:
             return None
         freqs = []
@@ -291,23 +281,9 @@ class FrequencyDialog(QDialog):
             return None
         return np.column_stack((np.array(freqs), np.array(bws)))
             
-    
-    # @property
-    # def values(self):
-    #     if not self._validate():
-    #         return None
-    #     freqs = []
-    #     bws = []
-    #     for row in range(self.table.rowCount()):
-    #         # _validate will be False if one item in row is None but other isn't
-    #         if (item := self.table.item(row, 0)) is not None and item.text().strip()!="":
-    #             freqs.append(float(item.text()))
-    #         if (item := self.table.item(row, 1)) is not None and item.text().strip()!="":
-    #             bws.append(float(item.text()))
-    #     return np.column_stack((np.array(freqs), np.array(bws)))
-    
     @property
     def valuesStr(self):
+        """ Return string representation of `values` """
         if (values := self.values) is not None:
             freqs, bws = values[:,0], values[:,1]
             return f"{len(freqs)} values; ({freqs[0]:g}, {bws[0]:g})...({freqs[-1]:g}, {bws[-1]:g})"
