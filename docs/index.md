@@ -2,6 +2,8 @@
 
 Welcome to the DetectorBank GUI docs!
 
+![Application window](img/db-gui.png)
+
 This app is designed to be a simple visualizer for the 
 [DetectorBank](https://keziah55.github.io/DetectorBank/).
 You can load an audio file, select frequencies to look for and 

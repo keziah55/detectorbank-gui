@@ -2,8 +2,8 @@ site_name: DetectorBank GUI
 
 nav:
     - Home: 'index.md'
-    - User guide: 'user_guide.md'
     - Installation: 'installation.md'
+    - User guide: 'user_guide.md'
 
 markdown_extensions:
   - pymdownx.arithmatex:

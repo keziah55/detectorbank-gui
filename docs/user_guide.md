@@ -3,13 +3,13 @@
 There are three panels in this app: Audio Input and Parameters on the left and 
 Output on the right. 
 
-| ![Application window](../img/db-gui.png)
+| ![Application window](img/db-gui.png)
 |:--:|
 | *Application window with analyis of an audio file* |
 
 ## Loading an audio file
 
-| ![Audio Input](../img/audio_input.png "Audio file with four regions" )
+| ![Audio Input](img/audio_input.png "Audio file with four regions" )
 |:--:|
 | *Audio file with four regions. The current mouse position is given under the plot.* |
 
@@ -36,7 +36,7 @@ the bottom left.
 
 ## Setting DetectorBank parameters
 
-| ![Parameters](../img/parameters.png "Parameters panel" )
+| ![Parameters](img/parameters.png "Parameters panel" )
 |:--:|
 | *Parameters for analysing the audio* |
 
@@ -71,7 +71,7 @@ or amplitude normalisation.
 
 ### Selecting frequencies and bandwidths
 
-| ![Frequency bandwidth dialog](../img/freq_bw_dialog.png "Frequency and bandwidth dialog" )
+| ![Frequency bandwidth dialog](img/freq_bw_dialog.png "Frequency and bandwidth dialog" )
 |:--:|
 | *Dialog window for setting frequencies and bandwidths of the detectors* |
 
@@ -109,7 +109,7 @@ set a factor to subsample the results by when plotting. The default value is 100
 
 ## Analysing the audio
 
-| ![Output](../img/output.png "Analysis of audio file" )
+| ![Output](img/output.png "Analysis of audio file" )
 |:--:|
 | *Analysis of the four selected audio regions* |
 
