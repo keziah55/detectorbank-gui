@@ -42,10 +42,8 @@ class TestArgsWidget:
     def setup_load_profile(self, qtbot, configfile, patch_settings):
         
         test_config_file = configfile
-        
         # can't use monkeypatch to redirect ~ here, as the DetectorBank C++ source
         # hard codes the path
-        config_file = os.path.ex
         config_file = os.path.expanduser("~/.config/hopfskipjump.xml")
         replace_config = config_file + ".bak"
         os.replace(config_file, replace_config) # mv .config/hopfskipjump.xml .config/hopfskipjump.xml.bak
