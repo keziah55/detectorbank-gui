@@ -1,0 +1,14 @@
+[Desktop Entry]
+Comment=
+Exec=detectorbank-gui
+GenericName=Visualize DetectorBank output
+Icon=/path/here/images/icon.png
+Name=DetectorBank GUI
+NoDisplay=false
+Path[$e]=
+StartupNotify=true
+Terminal=0
+TerminalOptions=
+Type=Application
+X-KDE-SubstituteUID=false
+X-KDE-Username=
