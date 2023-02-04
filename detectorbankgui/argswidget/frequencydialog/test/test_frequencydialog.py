@@ -186,7 +186,8 @@ class TestFrequencyBandwidthDialog:
         self.widget._valueChanged() # table.itemChanged not emitted by table.setItem?
         assert self.widget.okButton.isEnabled() is True
         
-        assert np.all(np.isclose(self.widget.values, np.column_stack((f, bw))))
+        expected = np.column_stack((freq, bw))
+        assert np.all(np.isclose(self.widget.values, expected))
         
         # was getting weird 'widget already deleted' errors
         # don't know why

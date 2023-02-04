@@ -66,7 +66,7 @@ mkdir "$resultsDir"
 
 pythonVersion=`python3 -c "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}')"`
 if [[ $pythonVersion == "3.11" ]]; then
-    echo "3.11"
+    echo "PySide2 from PyPI not compatible with Python 3.11"
     declare -a qt_bindings=("pyqt5" "pyside6" "pyqt6")
 else
     declare -a qt_bindings=("pyside2" "pyqt5" "pyside6" "pyqt6")

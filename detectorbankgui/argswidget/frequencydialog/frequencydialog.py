@@ -235,44 +235,76 @@ class FrequencyDialog(QDialog):
             return True
         
     def _validate(self):
+        return False if self.values is None else True
+        
+    #     if self.table.rowCount() == 0:
+    #         return False
+    #     # iterate through table
+    #     # if any row has a None value and a non-None value, table is invalid
+    #     # (if both items in row are None, can be skiped)
+    #     tableIsEmpty = True # table could be empty rows
+    #     for row in range(self.table.rowCount()):
+    #         freqItem = self.table.item(row, 0)
+    #         bwItem = self.table.item(row, 1)
+    #         boolF = freqItem is not None and freqItem.text().strip() != ""
+    #         boolBw = bwItem is not None and bwItem.text().strip() != ""
+    #         if boolF ^ boolBw: # xor
+    #             return False
+    #         # if the contents of either cell is a non-numeric string, return False
+    #         if boolF and not self._strIsNumeric(freqItem.text()):
+    #             return False
+    #         if boolBw and not self._strIsNumeric(bwItem.text()):
+    #             return False
+    #         if boolF or boolBw:
+    #             # either f or bw has a valid value, so table isn't empty
+    #             tableIsEmpty = False
+    #     if tableIsEmpty:
+    #         return False
+    #     return True
+        
+    @property
+    def values(self):
         if self.table.rowCount() == 0:
-            return False
-        # iterate through table
-        # if any row has a None value and a non-None value, table is invalid
-        # (if both items in row are None, can be skiped)
-        tableIsEmpty = True # table could be empty rows
+            return None
+        freqs = []
+        bws = []
         for row in range(self.table.rowCount()):
             freqItem = self.table.item(row, 0)
             bwItem = self.table.item(row, 1)
             boolF = freqItem is not None and freqItem.text().strip() != ""
             boolBw = bwItem is not None and bwItem.text().strip() != ""
-            if boolF ^ boolBw: # xor
-                return False
-            # if the contents of either cell is a non-numeric string, return False
-            if boolF and not self._strIsNumeric(freqItem.text()):
-                return False
-            if boolBw and not self._strIsNumeric(bwItem.text()):
-                return False
-            if boolF or boolBw:
-                # either f or bw has a valid value, so table isn't empty
-                tableIsEmpty = False
-        if tableIsEmpty:
-            return False
-        return True
-        
-    @property
-    def values(self):
-        if not self._validate():
+            if not boolF and not boolBw:
+                # whole row is empty, so skip
+                continue
+            elif boolF != boolBw:
+                # one empty, one not empty, so table is not valid
+                return None
+            else:
+                # check that both values are numberic
+                if not self._strIsNumeric(freqItem.text()) or not self._strIsNumeric(bwItem.text()):
+                    return None 
+                else:
+                    freqs.append(float(freqItem.text()))
+                    bws.append(float(bwItem.text()))
+        if len(freqs) == 0 and len(bws) == 0:
+            # table is all empty rows
             return None
-        freqs = []
-        bws = []
-        for row in range(self.table.rowCount()):
-            # _validate will be False if one item in row is None but other isn't
-            if (item := self.table.item(row, 0)) is not None and item.text().strip()!="":
-                freqs.append(float(item.text()))
-            if (item := self.table.item(row, 1)) is not None and item.text().strip()!="":
-                bws.append(float(item.text()))
         return np.column_stack((np.array(freqs), np.array(bws)))
+            
+    
+    # @property
+    # def values(self):
+    #     if not self._validate():
+    #         return None
+    #     freqs = []
+    #     bws = []
+    #     for row in range(self.table.rowCount()):
+    #         # _validate will be False if one item in row is None but other isn't
+    #         if (item := self.table.item(row, 0)) is not None and item.text().strip()!="":
+    #             freqs.append(float(item.text()))
+    #         if (item := self.table.item(row, 1)) is not None and item.text().strip()!="":
+    #             bws.append(float(item.text()))
+    #     return np.column_stack((np.array(freqs), np.array(bws)))
     
     @property
     def valuesStr(self):
