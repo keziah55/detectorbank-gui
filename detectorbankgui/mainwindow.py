@@ -67,7 +67,7 @@ class DetectorBankGui(QMainWindow):
         fileDir = os.path.split(__file__)[0]
         
         qt_api_version = qtpy.PYQT_VERSION if qtpy.API_NAME.startswith("PyQt") else qtpy.PYSIDE_VERSION
-        msg = ["DetectorBank GUI",
+        msg = ["DetectorBank GUI, v1.0.0",
                f"Python {sys.version_info.major}.{sys.version_info.minor}",
                f"Qt {qtpy.QT_VERSION}, {qtpy.API_NAME} {qt_api_version}",
                "(C) Keziah Milligan"]
@@ -193,6 +193,10 @@ class DetectorBankGui(QMainWindow):
         """ Open DetectorBank docs in browser """
         QDesktopServices.openUrl(QUrl("https://keziah55.github.io/DetectorBank/"))
         
+    def _reportBug(self):
+        """ Open GitHub issues page """
+        QDesktopServices.openUrl(QUrl("https://github.com/keziah55/detectorbank-gui/issues"))
+        
     def _about(self):
         self.about.exec_()
         
@@ -221,8 +225,10 @@ class DetectorBankGui(QMainWindow):
         self.openGuiDocsAction = QAction("&Open DetectorBank GUI documentation", self,
                                          shortcut="F1",
                                          triggered=self._openGuiDocs)
-        self.openDocsAction = QAction("&Open DetectorBank documentation", self,
+        self.openDocsAction = QAction("Open &DetectorBank documentation", self,
                                       triggered=self._openDocs)
+        self.reportBugAction = QAction("&Report a bug", self,
+                                      triggered=self._reportBug)
         self.aboutAction = QAction("&About", self, triggered=self._about)
             
     def _createToolBars(self):
@@ -244,7 +250,7 @@ class DetectorBankGui(QMainWindow):
         self.analyseMenu.addAction(self.analyseAction)
         
         self.helpMenu = self.menuBar().addMenu("&Help")
-        self.helpMenu.addActions([self.openGuiDocsAction, self.openDocsAction])
+        self.helpMenu.addActions([self.openGuiDocsAction, self.openDocsAction, self.reportBugAction])
         self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.aboutAction)
         
