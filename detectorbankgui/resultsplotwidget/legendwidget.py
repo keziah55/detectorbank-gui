@@ -8,6 +8,8 @@ from qtpy.QtWidgets import  QGraphicsView, QGraphicsScene
 import itertools
 
 class LegendWidget(QGraphicsView):
+    """ Widget showing legend for all plots """
+    
     def __init__(self, parent):
         super().__init__(parent)
         self._width = parent.size().width()
@@ -19,6 +21,7 @@ class LegendWidget(QGraphicsView):
         self.scene().addItem(self.legendItem)
         
     def makeLegend(self, freqs, colours):
+        """ Create legend from list of frequencies and colours """
         cols = self._width // self._itemWidth
         self.legendItem.setColumnCount(cols)
         for freq, colour in zip(freqs, itertools.cycle(colours)):
@@ -32,11 +35,13 @@ class LegendWidget(QGraphicsView):
         self._labelItems = list(zip(self._labelItems, itertools.cycle(colours)))
         
     def updateWidth(self, width):
+        """ Update the width of the legend """
         self._width = width
         cols = width // self._itemWidth
         self.legendItem.setColumnCount(cols)
         
     def highlightLabel(self, channel=None):
+        """ Highlight the text of the chosen channel's label """
         if self._highlighted is not None:
             labelItem, _ = self._labelItems[self._highlighted]
             labelItem.setText(labelItem.text, bold=False, color=self._labelColour)
@@ -45,3 +50,7 @@ class LegendWidget(QGraphicsView):
             labelItem, colour = self._labelItems[channel]
             labelItem.setText(labelItem.text, bold=True, color=colour)
         self._highlighted = channel
+        
+    def clear(self):
+        """ Remove all items from legend """
+        self.legendItem.clear()

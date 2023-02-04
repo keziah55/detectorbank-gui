@@ -187,6 +187,7 @@ class ResultsPlotWidget(QWidget):
         """ Remove all pages from stack """
         self._plots = []
         self._clearStack()
+        self.legendWidget.clear()
         
     def _clearStack(self):
         """ Remove all widgets from stack and reset current page index """
