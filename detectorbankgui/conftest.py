@@ -48,16 +48,10 @@ def atol():
     return 0.01
 
 @pytest.fixture
-def patch_settings(monkeypatch):
+def patch_settings():
     """ Don't use actual settings file """
-    appName = "DetectorBank"
-    orgName = "SMRG"
-    d = os.path.join(os.path.dirname(__file__), "test", "data")
-    # if conf file exists in test dir, remove it, so we're always testing with
-    # defaults, unless changed in the test
-    confFile = os.path.join(d, ".config", orgName, appName+".conf")
-    if os.path.exists(confFile):
-        os.remove(confFile)
-    monkeypatch.setenv("HOME", d)
-    QCoreApplication.setApplicationName(appName)
-    QCoreApplication.setOrganizationName(orgName)
+    app_name = "DetectorBank_test"
+    org_name = "SMRG"
+    
+    QCoreApplication.setApplicationName(app_name)
+    QCoreApplication.setOrganizationName(org_name)
