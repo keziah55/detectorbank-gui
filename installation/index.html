@@ -80,15 +80,15 @@
             
             <li class="nav-item" data-level="1"><a href="#installation" class="nav-link">Installation</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#dependencies" class="nav-link">Dependencies</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
             <li class="nav-item" data-level="2"><a href="#installing-detectorbank" class="nav-link">Installing DetectorBank</a>
               <ul class="nav flex-column">
               </ul>
             </li>
             <li class="nav-item" data-level="2"><a href="#installing-other-requirements" class="nav-link">Installing other requirements</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#make-executable-and-desktop-files" class="nav-link">Make executable and desktop files</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -100,15 +100,39 @@
                     <div class="col-md-9" role="main">
 
 <h1 id="installation">Installation</h1>
-<h2 id="dependencies">Dependencies</h2>
+<p>You'll need to install the <a href="https://github.com/keziah55/DetectorBank">DetectorBank</a>, 
+then download the <a href="https://github.com/keziah55/detectorbank-gui">GUI</a> and its requirements. 
+You'll also need a Qt5 or Qt6 installation, along with
+corresponding Python bindings, either PyQt or PySide (NB PySide2, as installed from PyPI, does not 
+work with Python 3.11. However, if you install PySide2 from your system repositories, it may work).</p>
 <h2 id="installing-detectorbank">Installing DetectorBank</h2>
+<p>Follow the instructions <a href="https://github.com/keziah55/DetectorBank#requirements">here</a> to install
+DetectorBank on your system. </p>
 <h2 id="installing-other-requirements">Installing other requirements</h2>
-<p>Install with pip:</p>
-<pre><code>pip install -r requirements.txt
+<p>First clone the detectorbank-gui repository to a suitable location</p>
+<pre><code>git clone https://github.com/keziah55/detectorbank-gui.git
 </code></pre>
+<p>You can install the requirements with pip:</p>
+<pre><code>cd detectorbank-gui
+python -m pip install -r requirements.txt
+</code></pre>
+<p>Note that this will install PyQt5, PyQt6, PySide2 and PySide6.</p>
 <p>Alternatively, on Debian/Ubuntu install:</p>
-<pre><code>
-</code></pre></div>
+<pre><code>apt install python3-numpy python3-scipy python3-bs4 python3-lxml python3-qtpy python3-pyqtgraph
+</code></pre>
+<p>along with the PyQt/PySide package of your choice, and </p>
+<pre><code>python -m pip install git+https://github.com/keziah55/CustomPyQtObjects.git
+</code></pre>
+<h2 id="make-executable-and-desktop-files">Make executable and desktop files</h2>
+<p>You may wish to create a script in your <code>PATH</code> to launch the GUI, e.g.</p>
+<pre><code>#!/bin/bash
+
+python /path/to/detectorbank-gui/main.py &quot;$@&quot;
+</code></pre>
+<p>The git repo conatins a <a href="https://github.com/keziah55/detectorbank-gui/blob/main/detectorbank-gui.desktop">.desktop file</a>. 
+If you want DetectorBank GUI to appear in your application launcher, 
+you can copy this to a suitable location, e.g. ~/.local/share/applications/ and change the entry
+for <code>Exec</code> to the path to the above script and <code>Icon</code> to detectorbank-gui/images/icon.png.</p></div>
             </div>
         </div>
 

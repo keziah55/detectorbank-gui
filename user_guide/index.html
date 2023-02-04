@@ -92,6 +92,10 @@
               <ul class="nav flex-column">
               </ul>
             </li>
+            <li class="nav-item" data-level="2"><a href="#subsample-factor" class="nav-link">Subsample factor</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
             <li class="nav-item" data-level="2"><a href="#analysing-the-audio" class="nav-link">Analysing the audio</a>
               <ul class="nav flex-column">
               </ul>
@@ -131,7 +135,7 @@ Output on the right. </p>
 </tr>
 </tbody>
 </table>
-<p>Usethe button in the top right of the Audio Input panel to select an audio file. 
+<p>Use the button in the top right of the Audio Input panel to select an audio file. 
 Note that it must be a '.wav' file.</p>
 <p>Performing analysis on a large audio file can consume a lot of RAM, so you can select
 regions that you'd like to analyse. By default, when you load audio, a region
@@ -242,9 +246,11 @@ bandwidth for that detector, given the other chosen parameters. See the table ab
 minimum bandwidth values.</p>
 <h2 id="saving-and-loading-profiles">Saving and loading profiles</h2>
 <p>Rather than entering your chosen parameters each time you use the app, you can save and load
-parameters as profiles. Use the 'Save' button to save the current parameters and 'Load' 
-to load them.</p>
-<p>You can set a default profile in Edit-&gt;Preferences-&gt;Parameters.</p>
+parameters as profiles. Use the 'Save' button to save the current parameters and the drop-down
+menu to load them. You can set a chosen profile as the default with the check box.</p>
+<h2 id="subsample-factor">Subsample factor</h2>
+<p>As noted above, analysing an audio file can consume a lot of RAM. To help reduce this, you can 
+set a factor to subsample the results by when plotting. The default value is 1000.</p>
 <h2 id="analysing-the-audio">Analysing the audio</h2>
 <table>
 <thead>
@@ -270,8 +276,7 @@ at 440Hz is highlighted in the plot and the legend.</p>
 <p>By default, the plots are shown in a 2x2 grid, spanning as many pages as necessary.
 You can change the grid dimensions by setting the rows and columns at the top of the 
 Output panel.</p>
-<p>The buttons at the end of the top toolbar allow you to export all plots to a chosen 
-directory or remove all plots from the panel.</p></div>
+<p>The button at the end of the top toolbar allow you to remove all plots from the panel.</p></div>
             </div>
         </div>
 
