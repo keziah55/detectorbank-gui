@@ -44,4 +44,5 @@ def configfile():
 
 @pytest.fixture
 def atol():
+    """ Absolute tolerance for np.isclose """
     return 0.01
