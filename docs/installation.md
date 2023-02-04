@@ -43,3 +43,7 @@ You may wish to create a script in your `PATH` to launch the GUI, e.g.
 python /path/to/detectorbank-gui/main.py "$@"
 ```
 
+The git repo conatins a [.desktop file](https://github.com/keziah55/detectorbank-gui/blob/main/detectorbank-gui.desktop). 
+If you want DetectorBank GUI to appear in your application launcher, 
+you can copy this to a suitable location, e.g. ~/.local/share/applications/ and change the entry
+for `Exec` to the path to the above script and `Icon` to detectorbank-gui/images/icon.png.

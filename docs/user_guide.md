@@ -13,7 +13,7 @@ Output on the right.
 |:--:|
 | *Audio file with four regions. The current mouse position is given under the plot.* |
 
-Usethe button in the top right of the Audio Input panel to select an audio file. 
+Use the button in the top right of the Audio Input panel to select an audio file. 
 Note that it must be a '.wav' file.
 
 Performing analysis on a large audio file can consume a lot of RAM, so you can select
@@ -99,10 +99,13 @@ minimum bandwidth values.
 ## Saving and loading profiles
 
 Rather than entering your chosen parameters each time you use the app, you can save and load
-parameters as profiles. Use the 'Save' button to save the current parameters and 'Load' 
-to load them.
+parameters as profiles. Use the 'Save' button to save the current parameters and the drop-down
+menu to load them. You can set a chosen profile as the default with the check box.
 
-You can set a default profile in Edit->Preferences->Parameters.
+## Subsample factor
+
+As noted above, analysing an audio file can consume a lot of RAM. To help reduce this, you can 
+set a factor to subsample the results by when plotting. The default value is 1000.
 
 ## Analysing the audio
 
@@ -126,5 +129,4 @@ By default, the plots are shown in a 2x2 grid, spanning as many pages as necessa
 You can change the grid dimensions by setting the rows and columns at the top of the 
 Output panel.
 
-The buttons at the end of the top toolbar allow you to export all plots to a chosen 
-directory or remove all plots from the panel.
+The button at the end of the top toolbar allow you to remove all plots from the panel.
