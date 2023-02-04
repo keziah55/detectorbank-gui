@@ -3,6 +3,8 @@
 There are three panels in this app: Audio Input and Parameters on the left and 
 Output on the right. 
 
+The audio file used here can be found [here](https://github.com/keziah55/detectorbank-gui/blob/main/detectorbankgui/test/data/dre48.wav).
+
 | ![Application window](img/db-gui.png)
 |:--:|
 | *Application window with analyis of an audio file* |
