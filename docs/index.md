@@ -1,8 +1,8 @@
 # DetectorBank GUI
 
-Welcome to the DetectorBank GUI docs!
-
-![Application window](img/db-gui.png)
+| ![Application window](img/db-gui.png)
+|:--:|
+| *DetectorBank GUI* |
 
 This app is designed to be a simple visualizer for the 
 [DetectorBank](https://keziah55.github.io/DetectorBank/).
