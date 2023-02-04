@@ -15,14 +15,14 @@ pytest_plugin = "pytest-qt"
 class TestArgsWidget:
 
     @pytest.fixture
-    def setup(self, qtbot):
+    def setup(self, qtbot, patch_settings):
         
         self._setup()
         qtbot.addWidget(self.widget)
         self.widget.show()
         
     @pytest.fixture
-    def setup_save_profile(self, qtbot):
+    def setup_save_profile(self, qtbot, patch_settings):
         
         config_file = os.path.expanduser("~/.config/hopfskipjump.xml")
         replace_config = config_file + ".bak"
@@ -38,7 +38,7 @@ class TestArgsWidget:
         os.replace(replace_config, config_file)
         
     @pytest.fixture
-    def setup_load_profile(self, qtbot, configfile):
+    def setup_load_profile(self, qtbot, configfile, patch_settings):
         
         test_config_file = configfile
         

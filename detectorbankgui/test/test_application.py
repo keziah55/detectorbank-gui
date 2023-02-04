@@ -2,7 +2,9 @@ from detectorbankgui.mainwindow import DetectorBankGui
 import numpy as np
 import pytest
 
-def test_app(qtbot, audiofile, audio_results, atol):
+pytest_plugin = "pytest-qt"
+
+def test_app(qtbot, audiofile, audio_results, atol, patch_settings):
     app = DetectorBankGui(audioFile=audiofile, profile="default")
     qtbot.addWidget(app)
     app.show()

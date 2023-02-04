@@ -1,6 +1,6 @@
 import pytest
 import os
-
+from qtpy.QtCore import QCoreApplication
 from detectorbankgui.audioread import read_audio
 
 def _get_data_path():
@@ -46,3 +46,18 @@ def configfile():
 def atol():
     """ Absolute tolerance for np.isclose """
     return 0.01
+
+@pytest.fixture
+def patch_settings(monkeypatch):
+    """ Don't use actual settings file """
+    appName = "DetectorBank"
+    orgName = "SMRG"
+    d = os.path.join(os.path.dirname(__file__), "test", "data")
+    # if conf file exists in test dir, remove it, so we're always testing with
+    # defaults, unless changed in the test
+    confFile = os.path.join(d, ".config", orgName, appName+".conf")
+    if os.path.exists(confFile):
+        os.remove(confFile)
+    monkeypatch.setenv("HOME", d)
+    QCoreApplication.setApplicationName(appName)
+    QCoreApplication.setOrganizationName(orgName)
