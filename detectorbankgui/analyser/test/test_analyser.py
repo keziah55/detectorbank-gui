@@ -20,7 +20,7 @@ class Segment:
     def __init__(self, n0, n1):
         self.samples = (n0, n1)
 
-def test_analyser(audio2, audio2_results, qtbot):
+def test_analyser(audio2, audio2_results, qtbot, atol):
     results_widget = MockResultsWidget()
     analyser = Analyser(results_widget)
     
@@ -54,7 +54,7 @@ def test_analyser(audio2, audio2_results, qtbot):
         
         result = results_widget.results[key]
         
-        assert np.all(np.isclose(result, expected, atol=0.01))
+        assert np.all(np.isclose(result, expected, atol=atol))
         
 def test_subsample(audio2, audio2_results, qtbot):
     results_widget = MockResultsWidget()
@@ -93,7 +93,7 @@ def test_subsample(audio2, audio2_results, qtbot):
         assert result.shape[1] < expected.shape[1]
         assert result.shape[1]  == expected.shape[1] // 10
         
-def test_analyse_full_audio(audio, audio_results, qtbot):
+def test_analyse_full_audio(audio, audio_results, qtbot, atol):
     
     audio, sr = audio
     
@@ -116,4 +116,4 @@ def test_analyse_full_audio(audio, audio_results, qtbot):
         analyser.start()
         
     expected = np.loadtxt(audio_results)
-    assert np.all(np.isclose(analyser.result, expected, atol=0.01))
+    assert np.all(np.isclose(analyser.result, expected, atol=atol))

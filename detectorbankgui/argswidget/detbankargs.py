@@ -397,5 +397,5 @@ class _DetBankArgsWidget(QWidget):
         
     def getSubsampleFactor(self) -> int:
         """ Return current 'subsample factor' box value """
-        return self.subsampleBox.value()
+        return int(self.subsampleBox.value())
     

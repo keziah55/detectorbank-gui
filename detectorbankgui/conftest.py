@@ -41,3 +41,7 @@ def audio2(audiofile2):
 def configfile():
     p = _get_data_path()
     return os.path.join(p, "hopfskipjump.xml")
+
+@pytest.fixture
+def atol():
+    return 0.01

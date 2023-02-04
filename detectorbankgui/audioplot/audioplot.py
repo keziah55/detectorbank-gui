@@ -218,7 +218,7 @@ class AudioPlotWidget(QWidget):
         self.plotWidget.setSegmentRange(idx, start=start, stop=stop)
         self.segmentList.setSegmentRange(idx, start=start, stop=stop)
         
-    def getSegments(self) -> list[tuple]:
+    def getSegments(self) -> list[Segment]:
         """ Return list of Segments """
         return self.plotWidget.segments
     

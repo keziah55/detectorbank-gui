@@ -78,7 +78,7 @@ class ResultsPlotWidget(QWidget):
         self.colours = ['#FFFF00', '#FF0000', '#B22222', '#FF8C00', '#FF1493',
                         '#8B008B', '#C71585', '#008000', '#00FF00', '#2F4F4F',
                         '#778899', '#87CEEB', '#0000FF']
-        self._plots = []
+        self._plots = [] # list of (PlotWidget, audioplot Segment) pairs
         
         self.page = 0
         

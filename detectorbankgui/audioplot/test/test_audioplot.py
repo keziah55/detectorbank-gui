@@ -18,11 +18,12 @@ class TestAudioPlot:
         self.widget.show()
         
     @pytest.fixture
-    def setup(self, qtbot, audio):
+    def setup(self, qtbot, audio, atol):
         self._setup()
         qtbot.addWidget(self.widget)
         self.widget.show()
         
+        self.atol = atol
         self.audio, self.sr = audio
         self.lenaudio = len(self.audio) / self.sr
         self.widget.setAudio(self.audio, self.sr)
@@ -33,8 +34,6 @@ class TestAudioPlot:
         self.label = widget.plotLabel
         self.plot = widget.plotWidget
         self.seglist = widget.segmentList
-        
-        self.atol = 0.01
         
         self.rmvButtonIndex = 3 if audioAvailable else 2
     
