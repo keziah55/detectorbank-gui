@@ -1,5 +1,7 @@
 #!/bin/bash
 
+GUI_DIR=$(pwd)
+
 ## install all dependencies
 
 # detectorbank dependencies
@@ -10,6 +12,7 @@ sudo apt install python3-numpy python3-scipy python3-bs4 python3-pyqt5 python3-q
 python3 -m pip install git+https://github.com/keziah55/CustomPyQtObjects.git
 
 ## install DetectorBank
+cd ..
 git clone https://github.com/keziah55/DetectorBank.git
 cd DetectorBank
 autoreconf --install --verbose
@@ -19,9 +22,8 @@ cd build
 make
 sudo make install
 
-## clone gui
-cd ..
-git clone https://github.com/keziah55/detectorbank-gui.git
+## back to gui
+cd $GUI_DIR
 
 ## copy script and icon, make .desktop
 
