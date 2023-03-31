@@ -1,6 +1,6 @@
 # Installation
 
-This app is distributed with an [install](https://github.com/keziah55/detectorbank-gui#installation) script that
+DetectorBank GUI is distributed with an [install](https://github.com/keziah55/detectorbank-gui#installation) script that
 will install all dependencies and add the app to your application launcher. (NB on Debian/Ubuntu systems, this 
 installs PyQt5; on Fedora it install PySide2)
 
