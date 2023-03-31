@@ -48,7 +48,27 @@ if [[ $OS == "debian" ]]; then
 else
   sudo dnf install python3-numpy python3-scipy python3-beautifulsoup4 python3-pyside2 python3-QtPy python3-pyqtgraph python3-pip
 fi
-python3 -m pip install git+https://github.com/keziah55/CustomPyQtObjects.git
+
+if [[ $NAME == *"Debian"* ]]; then
+  # 'python3 -m pip install' raises an error on debian, so get it manually
+  # no new dependencies to install
+  PYTHON_VERSION=`python3 -c "import sys; print(f'python{sys.version_info.major}.{sys.version_info.minor}')"`
+  LOCAL_INSTALL_DIR="/home/$USER/.local/lib/$PYTHON_VERSION/site-packages"
+  mkdir -p deps
+  cd deps
+  if [[ -e "CustomPyQtObjects" ]]; then
+    rm -rf "CustomPyQtObjects"
+  fi
+  if [[ -e "$LOCAL_INSTALL_DIR/customQObjects" ]]; then
+    rm "$LOCAL_INSTALL_DIR/customQObjects"
+  fi
+  git clone https://github.com/keziah55/CustomPyQtObjects.git
+  mkdir -p $LOCAL_INSTALL_DIR
+  ln -s $(pwd)/CustomPyQtObjects/customQObjects $LOCAL_INSTALL_DIR
+  cd ..
+else
+  python3 -m pip install git+https://github.com/keziah55/CustomPyQtObjects.git
+fi
 
 ## copy script and icon, make .desktop
 
