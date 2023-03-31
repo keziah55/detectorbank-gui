@@ -38,5 +38,5 @@ cp detectorbank-gui $LOCAL_BIN
 
 # make .desktop file
 ICON_PATH=$(pwd)/images/icon.png
-sed -i "/Icon=\/path\/here\/images\/icon.png/$ICON_PATH/" detectorbank-gui.desktop
+sed -i "s|/path/here/images/icon.png|${ICON_PATH}|g" detectorbank-gui.desktop
 cp detectorbank-gui.desktop "/home/$USER/.local/share/applications"
