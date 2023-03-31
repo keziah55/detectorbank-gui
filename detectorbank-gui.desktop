@@ -1,8 +1,9 @@
 [Desktop Entry]
+Categories=Audio;Music;
 Comment=
 Exec=detectorbank-gui
 GenericName=Visualize DetectorBank output
-Icon=/path/here/images/icon.png
+Icon=/home/keziah/projects/detectorbank-gui/images/icon.png
 Name=DetectorBank GUI
 NoDisplay=false
 Path[$e]=
