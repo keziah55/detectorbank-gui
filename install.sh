@@ -2,10 +2,16 @@
 
 GUI_DIR=$(pwd)
 
-. /etc/os-release
+if [ -f /etc/os-release ]; then
+  . /etc/os-release
+else
+  echo "OS $NAME not supported."
+  exit 1
+fi
+
 if [[ $NAME == *"Debian"* || $NAME == *"Ubuntu"*  ]]; then
   OS="debian"
-else if [[ $NAME == *"Fedora"* ]]; then
+elif [[ $NAME == *"Fedora"* ]]; then
   OS="fedora"
 else
   echo "OS $NAME not supported."
@@ -52,7 +58,7 @@ mkdir -p $LOCAL_BIN
 if [[ :$PATH: != *:"$LOCAL_BIN":* ]]; then
   export PATH=$PATH:$LOCAL_BIN
 fi
-cp detectorbank-gui $LOCAL_BIN
+ln -s $(pwd)/detectorbank-gui $LOCAL_BIN
 
 # make .desktop file
 cp detectorbank-gui.desktop.template detectorbank-gui.desktop
