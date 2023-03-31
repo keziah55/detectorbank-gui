@@ -1,5 +1,8 @@
 # DetectorBank GUI
 
+A simple app to use [DetectorBank](https://github.com/keziah55/DetectorBank) 
+to visualise and analyse audio.
+
 See the [User guide](https://keziah55.github.io/detectorbank-gui/user_guide/)
 for an overview of the application.
 
@@ -26,3 +29,17 @@ To run the tests:
 - pytest-qt
 - pytest-cov 
 - pytest-profiling 
+
+## Installation
+
+The provided `install.sh` script installs the dependencies 
+and add to your system's application launcher
+```
+./install.sh
+```
+Note that on Debian/Ubuntu, this install PyQt5, but on Fedora it install PySide2.
+
+If you already have [DetectorBank](https://github.com/keziah55/DetectorBank) and its dependencies installed
+```
+./install.sh --no-install-detectorbank
+```
