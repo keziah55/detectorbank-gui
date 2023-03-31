@@ -37,9 +37,10 @@ and add to your system's application launcher
 ```
 ./install.sh
 ```
-Note that on Debian/Ubuntu, this install PyQt5, but on Fedora it install PySide2.
+Note that on Debian/Ubuntu, this install PyQt5, but on Fedora it installs PySide2.
 
-If you already have [DetectorBank](https://github.com/keziah55/DetectorBank) and its dependencies installed
+If you already have [DetectorBank](https://github.com/keziah55/DetectorBank) and its dependencies installed,
+don't install again.
 ```
 ./install.sh --no-install-detectorbank
 ```
