@@ -58,6 +58,9 @@ mkdir -p $LOCAL_BIN
 if [[ :$PATH: != *:"$LOCAL_BIN":* ]]; then
   export PATH=$PATH:$LOCAL_BIN
 fi
+if [[ -f "$LOCAL_BIN/detectorbank-gui" ]]; then
+  rm "$LOCAL_BIN/detectorbank-gui"
+fi
 ln -s $(pwd)/detectorbank-gui $LOCAL_BIN
 
 # make .desktop file
