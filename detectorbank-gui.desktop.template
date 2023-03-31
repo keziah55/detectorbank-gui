@@ -1,5 +1,5 @@
 [Desktop Entry]
-Categories=Audio;Music;
+Categories=Audio;Music;AudioVideo;
 Comment=
 Exec=detectorbank-gui
 GenericName=Visualize DetectorBank output
