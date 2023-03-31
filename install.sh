@@ -18,7 +18,7 @@ else
   exit 1
 fi
 
-if [[ "$1" == "--no-install-detectorbank" ]]; then
+if [[ "$1" != "--no-install-detectorbank" ]]; then
 
   # detectorbank dependencies
   if [[ $OS == "debian" ]]; then
