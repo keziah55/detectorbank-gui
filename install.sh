@@ -37,6 +37,9 @@ fi
 cp detectorbank-gui $LOCAL_BIN
 
 # make .desktop file
-ICON_PATH=$(pwd)/images/icon.png
+cp detectorbank-gui.desktop.template detectorbank-gui.desktop
+ICON_PATH="$GUI_DIR/images/icon.png"
 sed -i "s|/path/here/images/icon.png|${ICON_PATH}|g" detectorbank-gui.desktop
-cp detectorbank-gui.desktop "/home/$USER/.local/share/applications"
+LOCAL_SHARE_APPS="/home/$USER/.local/share/applications"
+mkdir -p $LOCAL_SHARE_APPS
+cp detectorbank-gui.desktop $LOCAL_SHARE_APPS
