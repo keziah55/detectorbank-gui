@@ -3,17 +3,13 @@
 """
 DetectorBank GUI.
 """
-import sys
-import argparse
-from qtpy.QtWidgets import QApplication, QSplashScreen
-from qtpy.QtGui import QPixmap
 
 try:
     from detectorbankgui.mainwindow import DetectorBankGui
 except (ImportError, ModuleNotFoundError):
     try:
         # try adding paths
-        import os
+        import os, sys
         ld_lib_path = os.getenv("LD_LIBRARY_PATH", "")
         if (p:="/usr/local/lib/") not in ld_lib_path:
             os.environ["LD_LIBRARY_PATH"] = ld_lib_path + f":{p}"
@@ -21,15 +17,20 @@ except (ImportError, ModuleNotFoundError):
         local_lib_path = os.path.join(os.path.expanduser("~"), ".local", "lib", python_version, "site-packages")
         if local_lib_path not in sys.path:
             sys.path.append(local_lib_path)
-        # try to import again
-        from detectorbankgui.mainwindow import DetectorBankGui
-    except (ImportError, ModuleNotFoundError) as err:
+        # try again
+        os.execv(sys.argv[0], sys.argv)
+    except Exception as err:
         msg = ("Could not import DetectorBankGui\n "
                "Please check that both detecorbank and detectorbank-gui are installed "
                "and any environment variables (e.g. PYTHONPATH or LD_LIBRARY_PATH) "
                "are set appropriately.\n"
                f"Original error was:\n  {err}")
         raise RuntimeError(msg)
+        
+import sys
+import argparse
+from qtpy.QtWidgets import QApplication, QSplashScreen
+from qtpy.QtGui import QPixmap
 
 if __name__ == '__main__':
     
