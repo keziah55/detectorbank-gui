@@ -1,5 +1,7 @@
 #!/bin/bash -xe
 
+sudo echo -n
+
 TOP_DIR=$(pwd)
 PYTHON_VERSION=`python3 -c "import sys; print(f'python{sys.version_info.major}.{sys.version_info.minor}')"`
 # paths where detectorbank-gui stuff will be installed
