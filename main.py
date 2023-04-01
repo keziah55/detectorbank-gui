@@ -49,7 +49,7 @@ if __name__ == '__main__':
     
     splash_path = None
     possible_paths = [os.path.join("images", "splash.png"),
-                      os.path.join(os.path.expanduser("~"), ".local", "share", "detectorbankgui", "splash.png")]
+                      os.path.join(os.path.expanduser("~"), ".local", "share", "detectorbank-gui", "splash.png")]
     for p in possible_paths:
         if os.path.isfile(p):
             splash_path = p
