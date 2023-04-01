@@ -55,7 +55,7 @@ if __name__ == '__main__':
             splash_path = p
             break
     if splash_path is not None:
-        pixmap = QPixmap("images/splash.png")
+        pixmap = QPixmap(splash_path)
         splash = QSplashScreen(pixmap)
         splash.show()
     
