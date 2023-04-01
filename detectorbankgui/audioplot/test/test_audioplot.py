@@ -4,9 +4,6 @@ from qtpy.QtCore import Qt
 import pytest 
 import numpy as np
 
-import qtpy
-audioAvailable = True if qtpy.QT_VERSION.split('.')[0] == '5' else False
-
 pytest_plugin = "pytest-qt"
 
 class TestAudioPlot:
@@ -35,7 +32,7 @@ class TestAudioPlot:
         self.plot = widget.plotWidget
         self.seglist = widget.segmentList
         
-        self.rmvButtonIndex = 3 if audioAvailable else 2
+        self.rmvButtonIndex = 3
     
     def test_default_audioplot(self, setup_empty, qtbot):
 

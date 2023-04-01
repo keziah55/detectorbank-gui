@@ -18,10 +18,24 @@ from uuid import UUID, uuid4
 import os
 
 import qtpy
-audioAvailable = True if qtpy.QT_VERSION.split('.')[0] == '5' else False
-if audioAvailable:
-    from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput
-        
+if qtpy.QT_VERSION.split('.')[0] == '6':
+    from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioSink
+else:
+    from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput as QAudioSink
+    
+def qaudio_state_is_active(state):
+    try:
+        # PyQt5, PySide2, PySide6
+        active_state = QAudio.ActiveState
+    except AttributeError:
+        try:
+            # PyQt6
+            active_state = QAudio.State.ActiveState
+        except AttributeError:
+            msg = "Cannot get QAudio.ActiveState or QAudio.State.ActiveState"
+            raise RuntimeError(msg)
+    return state == active_state
+    
 @dataclass
 class Segment:
     """ Class to store start and stop values of a segment.
@@ -94,24 +108,22 @@ class AudioPlotWidget(QWidget):
         
         self.openAudioButton.clicked.connect(self._openAudioFile)
         
-        # only allow playback in qt5
-        if audioAvailable:
-            self.audioOutput = None
-            self.audioFormat = QAudioFormat()
-            self.audioFormat.setChannelCount(1)
-            # QAudioFormat API has changed between qt5 and qt6
-            if qtpy.QT_VERSION.split('.')[0] == '6':
-                # pyside6 and pyqt6 handle sample format enum differently 
-                # and this is not dealt with by qtpy
-                try:
-                    self.audioFormat.setSampleFormat(QAudioFormat.Float) # pyside6
-                except AttributeError:
-                    self.audioFormat.setSampleFormat(QAudioFormat.SampleFormat.Float) # pyqt6
-            else:
-                self.audioFormat.setSampleType(QAudioFormat.Float)
-                self.audioFormat.setSampleSize(32)
-                self.audioFormat.setCodec("audio/pcm")
-            self.audioBuffer = QBuffer()
+        self.audioOutput = None
+        self.audioFormat = QAudioFormat()
+        self.audioFormat.setChannelCount(1)
+        # QAudioFormat API has changed between qt5 and qt6
+        if qtpy.QT_VERSION.split('.')[0] == '6':
+            # pyside6 and pyqt6 handle sample format enum differently 
+            # and this is not dealt with by qtpy
+            try:
+                self.audioFormat.setSampleFormat(QAudioFormat.Float) # pyside6
+            except AttributeError:
+                self.audioFormat.setSampleFormat(QAudioFormat.SampleFormat.Float) # pyqt6
+        else:
+            self.audioFormat.setSampleType(QAudioFormat.Float)
+            self.audioFormat.setSampleSize(32)
+            self.audioFormat.setCodec("audio/pcm")
+        self.audioBuffer = QBuffer()
         
         self._playingSegment = None
         self.segmentList.requestPlaySegment.connect(self._requestPlaySegment)
@@ -176,12 +188,11 @@ class AudioPlotWidget(QWidget):
         self._max = len(audio)/self.sr
         self.segmentList.setMaximum(self._max)
         
-        if audioAvailable:
-            if self.audioOutput is not None:
-                self.audioOutput.stateChanged.disconnect()
-            self.audioFormat.setSampleRate(sr)
-            self.audioOutput = QAudioOutput(self.audioFormat, self)
-            self.audioOutput.stateChanged.connect(self._audioStateChanged)
+        if self.audioOutput is not None:
+            self.audioOutput.stateChanged.disconnect()
+        self.audioFormat.setSampleRate(sr)
+        self.audioOutput = QAudioSink(self.audioFormat, self)
+        self.audioOutput.stateChanged.connect(self._audioStateChanged)
         
     def addSegment(self, start=None, stop=None):
         """ Add segment in both plot and list. """
@@ -250,14 +261,14 @@ class AudioPlotWidget(QWidget):
                 
     def _requestStopSegment(self):
         """ Stop any playing audio """
-        if self.audioOutput.state() == QAudio.ActiveState:
+        if qaudio_state_is_active(self.audioOutput.state()):
             self.audioOutput.stop()
         if self.audioBuffer.isOpen():
             self.audioBuffer.close()
             
     def _audioStateChanged(self, state):
         # update SegmentWidget button icon
-        if state == QAudio.ActiveState:
+        if qaudio_state_is_active(state):
             self._playingSegment.playing = True
         else:
             self._playingSegment.playing = False
