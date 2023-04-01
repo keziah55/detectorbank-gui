@@ -99,9 +99,6 @@ fi
 cp -r "$TOP_DIR/detectorbankgui" $LOCAL_INSTALL_DIR
 
 # copy script to ~/.local/bin
-if [[ :$PATH: != *:"$LOCAL_BIN":* ]]; then
-  export PATH=$PATH:$LOCAL_BIN
-fi
 if [[ -f "$LOCAL_BIN/detectorbank-gui" ]]; then
   rm "$LOCAL_BIN/detectorbank-gui"
 fi
@@ -112,3 +109,8 @@ cp detectorbank-gui.desktop.template detectorbank-gui.desktop
 ICON_PATH="$TOP_DIR/images/icon.png"
 sed -i "s|/path/here/images/icon.png|${ICON_PATH}|g" detectorbank-gui.desktop
 mv detectorbank-gui.desktop $LOCAL_SHARE_APPS
+
+printf "\nInstallation successful!"
+if [[ :$PATH: != *:"$LOCAL_BIN":* ]]; then
+  printf "You may need to add $LOCAL_BIN to your PATH in order to run detectorbank-gui"
+fi
