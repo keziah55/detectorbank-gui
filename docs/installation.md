@@ -1,5 +1,7 @@
 # Installation
 
+DetectorBank GUI has been tested on Debian, Ubuntu, Mint and Fedora.
+
 DetectorBank GUI is distributed with an [install](https://github.com/keziah55/detectorbank-gui#installation) script that
 will install all dependencies and add the app to your application launcher. (NB on Debian/Ubuntu systems, this 
 installs PyQt5; on Fedora it install PySide2)
@@ -46,10 +48,12 @@ python -m pip install git+https://github.com/keziah55/CustomPyQtObjects.git
 
 ### Make executable and desktop files
 
-The detectorbank-gui source also contains a [detectorbank-gui script](https://github.com/keziah55/detectorbank-gui/blob/main/detectorbank-gui). Copy this to somewhere in your `$PATH`.
+The detectorbank-gui source also contains a [main.py script](https://github.com/keziah55/detectorbank-gui/blob/main/main.py). Copy this to somewhere in your `$PATH`. You may want to rename it `detectorbank-gui`.
 
 The git repo conatins a [.desktop template](https://github.com/keziah55/detectorbank-gui/blob/main/detectorbank-gui.desktop.template) file. 
 If you want DetectorBank GUI to appear in your application launcher, 
 you can change the entry for `Icon` to detectorbank-gui/images/icon.png 
 and save this to a suitable location (without '.template'), 
-e.g. ~/.local/share/applications/detectorbank-gui.desktop
+e.g. ~/.local/share/applications/detectorbank-gui.desktop.
+You'll also need to set the `Exec` entry to whatever you called the script 
+in the step above.

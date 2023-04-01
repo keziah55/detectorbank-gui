@@ -18,7 +18,7 @@ else
   exit 1
 fi
 
-if [[ $NAME == *"Debian"* || $NAME == *"Ubuntu"*  ]]; then
+if [[ $NAME == *"Debian"* || $NAME == *"Ubuntu"* || $NAME == *"Mint"*  ]]; then
   OS="debian"
 elif [[ $NAME == *"Fedora"* ]]; then
   OS="fedora"

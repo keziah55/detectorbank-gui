@@ -37,10 +37,15 @@ and add to your system's application launcher
 ```
 ./install.sh
 ```
-Note that on Debian/Ubuntu, this install PyQt5, but on Fedora it installs PySide2.
+Note that on Debian/Ubuntu/Mint, this install PyQt5, but on Fedora it installs PySide2.
 
 If you already have [DetectorBank](https://github.com/keziah55/DetectorBank) and its dependencies installed,
 don't install again:
 ```
 ./install.sh --no-install-detectorbank
 ```
+
+Note that you may need to add `~/.local/bin` to your `PATH` (in `~/.bashrc` or similar) in order to launch detectorbank-gui.
+
+If DetectorBank GUI doesn't appear automatically in your application launcher, 
+refresh the database with `update-desktop-database ~/.local/share/applications/1
