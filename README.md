@@ -48,4 +48,4 @@ don't install again:
 Note that you may need to add `~/.local/bin` to your `PATH` (in `~/.bashrc` or similar) in order to launch detectorbank-gui.
 
 If DetectorBank GUI doesn't appear automatically in your application launcher, 
-refresh the database with `update-desktop-database ~/.local/share/applications/1
+refresh the database with `update-desktop-database ~/.local/share/applications/`
