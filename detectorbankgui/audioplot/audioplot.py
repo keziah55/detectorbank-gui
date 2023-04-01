@@ -24,16 +24,12 @@ else:
     from qtpy.QtMultimedia import QAudio, QAudioFormat, QAudioOutput as QAudioSink
     
 def qaudio_state_is_active(state):
-    try:
+    if qtpy.API_NAME == "PyQt6":
+        # don't know why this is different in pyqt6
+        active_state = QAudio.State.ActiveState
+    else:
         # PyQt5, PySide2, PySide6
         active_state = QAudio.ActiveState
-    except AttributeError:
-        try:
-            # PyQt6
-            active_state = QAudio.State.ActiveState
-        except AttributeError:
-            msg = "Cannot get QAudio.ActiveState or QAudio.State.ActiveState"
-            raise RuntimeError(msg)
     return state == active_state
     
 @dataclass
