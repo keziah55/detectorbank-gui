@@ -28,6 +28,7 @@ except (ImportError, ModuleNotFoundError):
         raise RuntimeError(msg)
         
 import sys
+import os
 import argparse
 from qtpy.QtWidgets import QApplication, QSplashScreen
 from qtpy.QtGui import QPixmap
@@ -46,12 +47,22 @@ if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     
-    pixmap = QPixmap("images/splash.png")
-    splash = QSplashScreen(pixmap)
-    splash.show()
+    splash_path = None
+    possible_paths = [os.path.join("images", "splash.png"),
+                      os.path.join(os.path.expanduser("~"), ".local", "share", "detectorbankgui", "splash.png")]
+    for p in possible_paths:
+        if os.path.isfile(p):
+            splash_path = p
+            break
+    if splash_path is not None:
+        pixmap = QPixmap("images/splash.png")
+        splash = QSplashScreen(pixmap)
+        splash.show()
     
     window = DetectorBankGui(audioFile=args.input, profile=args.profile)
     window.show()
-    splash.finish(window)
+    
+    if splash_path is not None:
+        splash.finish(window)
     
     sys.exit(app.exec_())

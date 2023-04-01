@@ -3,9 +3,11 @@
 TOP_DIR=$(pwd)
 PYTHON_VERSION=`python3 -c "import sys; print(f'python{sys.version_info.major}.{sys.version_info.minor}')"`
 # paths where detectorbank-gui stuff will be installed
-LOCAL_INSTALL_DIR="/home/$USER/.local/lib/$PYTHON_VERSION/site-packages"
-LOCAL_BIN="/home/$USER/.local/bin"
-LOCAL_SHARE_APPS="/home/$USER/.local/share/applications"
+LOCAL_DIR="/home/$USER/.local"
+LOCAL_INSTALL_DIR="$LOCAL_DIR/lib/$PYTHON_VERSION/site-packages"
+LOCAL_BIN="$LOCAL_DIR/bin"
+LOCAL_SHARE="$LOCAL_DIR/share"
+LOCAL_SHARE_APPS="$LOCAL_DIR/share/applications"
 # ensure these paths all exist
 mkdir -p $LOCAL_INSTALL_DIR
 mkdir -p $LOCAL_BIN
@@ -106,7 +108,11 @@ cp "$TOP_DIR/main.py" $LOCAL_BIN/detectorbank-gui
 
 # make .desktop file
 cp detectorbank-gui.desktop.template detectorbank-gui.desktop
-ICON_PATH="$TOP_DIR/images/icon.png"
+IMG_DIR="$LOCAL_SHARE/detectorbank-gui"
+mkdir -p $IMG_DIR
+ICON_PATH="$IMG_DIR/icon.png"
+cp "$TOP_DIR/images/icon.png" $ICON_PATH
+cp "$TOP_DIR/images/splash.png" "$IMG_DIR/splash.png"
 sed -i "s|/path/here/images/icon.png|${ICON_PATH}|g" detectorbank-gui.desktop
 mv detectorbank-gui.desktop $LOCAL_SHARE_APPS
 
