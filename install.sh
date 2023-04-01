@@ -110,7 +110,9 @@ ICON_PATH="$TOP_DIR/images/icon.png"
 sed -i "s|/path/here/images/icon.png|${ICON_PATH}|g" detectorbank-gui.desktop
 mv detectorbank-gui.desktop $LOCAL_SHARE_APPS
 
-printf "\nInstallation successful!\n"
 if [[ :$PATH: != *:"$LOCAL_BIN":* ]]; then
-  printf "You may need to add \"$LOCAL_BIN\" to your PATH in order to run detectorbank-gui\n"
+  msg="You may need to add \"$LOCAL_BIN\" to your PATH in order to run detectorbank-gui"
+else
+  msg=""
 fi
+printf "\nInstallation successful!\n$msg\n"
