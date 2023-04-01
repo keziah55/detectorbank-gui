@@ -36,8 +36,10 @@ class LegendWidget(QGraphicsView):
         
     def updateWidth(self, width):
         """ Update the width of the legend """
-        self._width = width
         cols = width // self._itemWidth
+        if cols == 0:
+            return
+        self._width = width
         self.legendItem.setColumnCount(cols)
         
     def highlightLabel(self, channel=None):
