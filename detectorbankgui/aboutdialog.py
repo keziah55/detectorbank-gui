@@ -6,6 +6,7 @@ Simple About dialog
 from qtpy.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox, QLabel
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt
+from pathlib import Path
 
 class AboutDialog(QDialog):
     def __init__(self, msg, image=None):
@@ -21,6 +22,8 @@ class AboutDialog(QDialog):
         layout = QVBoxLayout()
         layout.addWidget(msg)
         if image is not None:
+            if isinstance(image, Path):
+                image = str(image)
             pixmap = QPixmap(image)
             image = QLabel()
             image.setPixmap(pixmap)

@@ -9,6 +9,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     try:
         import os, sys
+        from pathlib import Path
         if sys.argv[-1] == "stop now please":
             # we've already tried this once, don't keep looping
             raise Exception
@@ -18,7 +19,7 @@ except (ImportError, ModuleNotFoundError):
         if (p:="/usr/local/lib/") not in ld_lib_path:
             os.environ["LD_LIBRARY_PATH"] = ld_lib_path + f":{p}"
         python_version = f"python{sys.version_info.major}.{sys.version_info.minor}"
-        local_lib_path = os.path.join(os.path.expanduser("~"), ".local", "lib", python_version, "site-packages")
+        local_lib_path = str(Path.home().joinpath(".local", "lib", python_version, "site-packages"))
         if local_lib_path not in sys.path:
             sys.path.append(local_lib_path)
             
@@ -35,6 +36,7 @@ except (ImportError, ModuleNotFoundError):
         
 import sys
 import os
+from pathlib import Path
 import argparse
 from qtpy.QtWidgets import QApplication, QSplashScreen
 from qtpy.QtGui import QPixmap
@@ -54,14 +56,16 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     
     splash_path = None
-    possible_paths = [os.path.join("images", "splash.png"),
-                      os.path.join(os.path.expanduser("~"), ".local", "share", "detectorbank-gui", "splash.png")]
+    possible_paths = [
+        Path("images", "splash.png"),
+        Path.home().joinpath(".local", "share", "detectorbank-gui", "splash.png")
+    ]
     for p in possible_paths:
-        if os.path.isfile(p):
+        if p.is_file():
             splash_path = p
             break
     if splash_path is not None:
-        pixmap = QPixmap(splash_path)
+        pixmap = QPixmap(str(splash_path))
         splash = QSplashScreen(pixmap)
         splash.show()
     

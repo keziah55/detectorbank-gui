@@ -6,7 +6,7 @@ ProfileManager object to return extant profile and save new ones.
 
 from bs4 import BeautifulSoup
 import numpy as np
-import os.path
+from pathlib import Path
 
 class Profile:
     lookup = {"numThreads":"maxThreads", "damping":"d"}
@@ -56,8 +56,8 @@ class Profile:
 
 class ProfileManager:
     def __init__(self, configfile=None):
-        self._configfile = configfile if configfile is not None else os.path.expanduser("~/.config/hopfskipjump.xml")
-        if not os.path.exists(self._configfile):
+        self._configfile = configfile if configfile is not None else Path.home().joinpath(".config", "hopfskipjump.xml")
+        if not self._configfile.exists():
             with open(self._configfile, "w") as fileobj:
                 fileobj.write("")
                 

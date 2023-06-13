@@ -15,7 +15,7 @@ import numpy as np
 import itertools
 from dataclasses import dataclass, field
 from uuid import UUID, uuid4
-import os
+from pathlib import Path
 
 import qtpy
 if qtpy.QT_VERSION.split('.')[0] == '6':
@@ -139,7 +139,7 @@ class AudioPlotWidget(QWidget):
         
         self.setLayout(layout)
         
-        self._openAudioDir = os.getcwd()
+        self._openAudioDir = Path.cwd()
         self.audioFilePath = None
         self.audio = None
         self.sr = None
@@ -163,18 +163,20 @@ class AudioPlotWidget(QWidget):
             
     def openAudioFile(self, fname):
         """ Read audio file and set audio plot """
+        if not isinstance(fname, Path):
+            fname = Path(fname)
         try:
             self.audio, self.sr = read_audio(fname)
         except Exception as err:
-            msg = f"Opening '{os.path.basename(fname)}' failed with error:\n{err}"
+            msg = f"Opening '{fname.name}' failed with error:\n{err}"
             QMessageBox.warning(self, "Cannot open audio file", msg)
         else:
             self.setAudio(self.audio, self.sr)
             self.removeAllSegments()
-            self._openAudioDir = os.path.dirname(fname)
+            self._openAudioDir = fname.parent
             self.audioFilePath = fname
             self.audioFileOpened.emit(self.sr)
-            self.statusMessage.emit(f"Opened {os.path.basename(fname)}; sample rate {self.sr}Hz")
+            self.statusMessage.emit(f"Opened {fname.name}; sample rate {self.sr}Hz")
         
     def setAudio(self, audio, sr):
         """ Set audio and sample rate. """

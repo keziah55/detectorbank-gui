@@ -47,13 +47,9 @@ def test_analyser(audio2, audio2_results, qtbot, atol):
         analyser.start()
         
     for result_file in audio2_results:
-        fname = os.path.basename(result_file)
-        key = int(os.path.splitext(fname)[0])
-        
+        key = int(result_file.stem)
         expected = np.loadtxt(result_file)
-        
         result = results_widget.results[key]
-        
         assert np.all(np.isclose(result, expected, atol=atol))
         
 def test_subsample(audio2, audio2_results, qtbot):
@@ -83,13 +79,9 @@ def test_subsample(audio2, audio2_results, qtbot):
         analyser.start()
         
     for result_file in audio2_results:
-        fname = os.path.basename(result_file)
-        key = int(os.path.splitext(fname)[0])
-        
+        key = int(result_file.stem)
         expected = np.loadtxt(result_file)
-        
         result = results_widget.results[key]
-        
         assert result.shape[1] < expected.shape[1]
         assert result.shape[1]  == expected.shape[1] // 10
         

@@ -17,7 +17,7 @@ from .resultsplotwidget import ResultsPlotWidget
 from .invalidargexception import InvalidArgException
 from collections import deque
 import sys
-import os
+from pathlib import Path
 
 class DetectorBankGui(QMainWindow):
     
@@ -64,18 +64,18 @@ class DetectorBankGui(QMainWindow):
         if audioFile is not None:
             self.audioplot.openAudioFile(audioFile)
             
-        fileDir = os.path.split(__file__)[0]
+        file_dir = Path(__file__).parents[1].joinpath("images")
         
         qt_api_version = qtpy.PYQT_VERSION if qtpy.API_NAME.startswith("PyQt") else qtpy.PYSIDE_VERSION
         msg = ["DetectorBank GUI, v1.0.0",
                f"Python {sys.version_info.major}.{sys.version_info.minor}",
                f"Qt {qtpy.QT_VERSION}, {qtpy.API_NAME} {qt_api_version}",
                "(C) Keziah Milligan"]
-        image = os.path.join(fileDir, "..", "images/splash.png")
+        image = file_dir.joinpath("splash.png")
         self.about = AboutDialog("\n".join(msg), image)
         
-        path = os.path.join(fileDir, "..", "images/icon.png")
-        icon = QIcon(path)
+        path = file_dir.joinpath("icon.png")
+        icon = QIcon(str(path))
         self.setWindowIcon(icon)
         
     def show(self):

@@ -1,33 +1,33 @@
 import pytest
-import os
+from pathlib import Path
 from qtpy.QtCore import QCoreApplication
 from detectorbankgui.audioread import read_audio
 
 def _get_data_path():
-    p = os.path.dirname(__file__)
-    return os.path.join(p, "test", "data")
+    p = Path(__file__).parent.joinpath("test", "data")
+    return p
 
 @pytest.fixture
 def audio_results():
     p = _get_data_path()
-    csv = os.path.join(p, 'a4.csv')
+    csv = p.joinpath('a4.csv')
     return csv
 
 @pytest.fixture
 def audio2_results():
     p = _get_data_path()
-    csv = [os.path.join(p, f) for f in ['0.csv', '1.csv']]
+    csv = [p.joinpath(f) for f in ['0.csv', '1.csv']]
     return csv
 
 @pytest.fixture
 def audiofile():
     p = _get_data_path()
-    return os.path.join(p, "a4.wav")
+    return p.joinpath("a4.wav")
 
 @pytest.fixture
 def audiofile2():
     p = _get_data_path()
-    return os.path.join(p, "dre48.wav")
+    return p.joinpath("dre48.wav")
 
 @pytest.fixture
 def audio(audiofile):
@@ -40,7 +40,7 @@ def audio2(audiofile2):
 @pytest.fixture
 def configfile():
     p = _get_data_path()
-    return os.path.join(p, "hopfskipjump.xml")
+    return p.joinpath("hopfskipjump.xml")
 
 @pytest.fixture
 def atol():

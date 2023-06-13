@@ -7,6 +7,7 @@ from qtpy.QtWidgets import QDialog
 from qtpy.QtCore import Qt
 import pytest 
 import os
+from pathlib import Path
 import shutil
 import numpy as np
 
@@ -25,9 +26,9 @@ class TestArgsWidget:
     def setup_save_profile(self, qtbot, patch_settings):
         # can't use monkeypatch to redirect ~ here, as the DetectorBank C++ source
         # hard codes the path
-        config_file = os.path.expanduser("~/.config/hopfskipjump.xml")
-        replace_config = config_file + ".bak"
-        os.replace(config_file, replace_config)
+        config_file = Path.home().joinpath(".config", "hopfskipjump.xml") 
+        replace_config = config_file.with_suffix(".bak")
+        config_file.replace(replace_config)
         self.config_file = config_file
         
         self._setup()
@@ -36,7 +37,7 @@ class TestArgsWidget:
         
         yield
         
-        os.replace(replace_config, config_file)
+        replace_config.replace(config_file)
         
     @pytest.fixture
     def setup_load_profile(self, qtbot, configfile, patch_settings):
@@ -44,9 +45,9 @@ class TestArgsWidget:
         test_config_file = configfile
         # can't use monkeypatch to redirect ~ here, as the DetectorBank C++ source
         # hard codes the path
-        config_file = os.path.expanduser("~/.config/hopfskipjump.xml")
-        replace_config = config_file + ".bak"
-        os.replace(config_file, replace_config) # mv .config/hopfskipjump.xml .config/hopfskipjump.xml.bak
+        config_file = Path.home().joinpath(".config", "hopfskipjump.xml") 
+        replace_config = config_file.with_suffix(".bak")
+        config_file.replace(replace_config) # mv .config/hopfskipjump.xml .config/hopfskipjump.xml.bak
         shutil.copyfile(test_config_file, config_file) # mv test/data/hopfskipjump.xml .config/hopfskipjump.xml
         
         self.config_file = config_file
@@ -57,7 +58,7 @@ class TestArgsWidget:
         
         yield
         
-        os.replace(replace_config, config_file) # mv .config/hopfskipjump.xml.bak .config/hopfskipjump.xml
+        replace_config.replace(config_file) # mv .config/hopfskipjump.xml.bak .config/hopfskipjump.xml
         
     def _setup(self):
         widget = ArgsWidget()
