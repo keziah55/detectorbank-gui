@@ -64,19 +64,24 @@ class DetectorBankGui(QMainWindow):
         if audioFile is not None:
             self.audioplot.openAudioFile(audioFile)
             
-        file_dir = Path(__file__).parents[1].joinpath("images")
+        img_dir = Path.home().joinpath(".local", "share", "detectorbank-gui")
+        if not img_dir.exists():
+            img_dir = Path(__file__).parents[1].joinpath("images")
         
         qt_api_version = qtpy.PYQT_VERSION if qtpy.API_NAME.startswith("PyQt") else qtpy.PYSIDE_VERSION
         msg = ["DetectorBank GUI, v1.0.0",
                f"Python {sys.version_info.major}.{sys.version_info.minor}",
                f"Qt {qtpy.QT_VERSION}, {qtpy.API_NAME} {qt_api_version}",
                "(C) Keziah Milligan"]
-        image = file_dir.joinpath("splash.png")
-        self.about = AboutDialog("\n".join(msg), image)
+        splash = img_dir.joinpath("splash.png")
+        if not splash.exists():
+            splash = None
+        self.about = AboutDialog("\n".join(msg), splash)
         
-        path = file_dir.joinpath("icon.png")
-        icon = QIcon(str(path))
-        self.setWindowIcon(icon)
+        icon = img_dir.joinpath("icon.png")
+        if icon.exists():
+            icon = QIcon(str(icon))
+            self.setWindowIcon(icon)
         
     def show(self):
         settings = Settings()
