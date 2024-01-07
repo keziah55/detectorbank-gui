@@ -50,9 +50,9 @@ if [[ "$1" != "--no-install-detectorbank" ]]; then
   if [ "$INSTALL_DETBANK" = true ]; then
     # install dependencies
     if [[ $OS == "debian" ]]; then
-      sudo apt install python3-dev python3-numpy swig build-essential autoconf-archive pkg-config libtool libcereal-dev librapidxml-dev libfftw3-dev doxygen python3 graphviz python3-tap
+      sudo apt install python3-dev python3-build python3-numpy swig build-essential autoconf-archive pkg-config libtool libcereal-dev librapidxml-dev libfftw3-dev doxygen python3 graphviz python3-tap
     else
-      sudo dnf install make automake gcc gcc-c++ kernel-devel python3-devel python3-numpy swig autoconf-archive libtool fftw-devel rapidxml-devel cereal-devel doxygen python3 graphviz
+      sudo dnf install make automake gcc gcc-c++ kernel-devel python3-devel python3-build python3-numpy swig autoconf-archive libtool fftw-devel rapidxml-devel cereal-devel doxygen python3 graphviz
     fi
 
     ## install DetectorBank
@@ -65,6 +65,8 @@ if [[ "$1" != "--no-install-detectorbank" ]]; then
     ../configure
     make
     sudo make install
+    WHEEL=`ls dist | grep \.whl`
+    python3 -m pip install $WHEEL
 
     ## back to gui
     cd $TOP_DIR
