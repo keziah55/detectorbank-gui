@@ -157,7 +157,7 @@ class AudioPlotWidget(QWidget):
     def _openAudioFile(self):
         """ Show open file dialog """
         fname, _ = QFileDialog.getOpenFileName(
-            self, "Select audio file", self._openAudioDir, "Wav files (*.wav);;All files (*)")
+            self, "Select audio file", str(self._openAudioDir), "Wav files (*.wav);;All files (*)")
         if fname:
             self.openAudioFile(fname)
             

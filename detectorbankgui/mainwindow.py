@@ -209,7 +209,7 @@ class DetectorBankGui(QMainWindow):
         self.openAudioFileAction = QAction(
             "&Open audio file", self, shortcut=QKeySequence.Open, 
             statusTip="Select audio file",
-            triggered=self.audioplot.openAudioFile)
+            triggered=self.audioplot._openAudioFile)
         if (icon := getIconFromTheme("audio-x-generic")) is not None:
             self.openAudioFileAction.setIcon(icon)
             
